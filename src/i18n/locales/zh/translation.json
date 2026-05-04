@@ -27,7 +27,12 @@
     "iamUsernamePlaceholder": "你的 IAM 用户名",
     "accessKeyId": "访问密钥 ID",
     "secretAccessKey": "秘密访问密钥",
-    "mfaCode": "MFA 验证码（6位数字）"
+    "mfaCode": "MFA 验证码（6位数字）",
+    "resetCredentials": "重置已保存凭证",
+    "resetConfirm": "这将删除所有已保存的登录信息。是否继续？",
+    "resetDone": "已保存的凭证已清除。",
+    "theme": "主题",
+    "themeMode": "模式"
   },
   "tabs": { "logs": "CloudWatch", "ecs": "ECS", "ecr": "ECR" },
   "screens": {

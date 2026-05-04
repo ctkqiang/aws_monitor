@@ -27,7 +27,12 @@
     "iamUsernamePlaceholder": "your-iam-username",
     "accessKeyId": "Access Key ID",
     "secretAccessKey": "Secret Access Key",
-    "mfaCode": "MFA Code (6 digits)"
+    "mfaCode": "MFA Code (6 digits)",
+    "resetCredentials": "Reset Saved Credentials",
+    "resetConfirm": "This will delete all saved login information. Continue?",
+    "resetDone": "Saved credentials have been cleared.",
+    "theme": "Theme",
+    "themeMode": "Mode"
   },
   "tabs": { "logs": "CloudWatch", "ecs": "ECS", "ecr": "ECR" },
   "screens": {

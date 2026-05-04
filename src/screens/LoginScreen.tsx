@@ -8,20 +8,27 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { signInWithAws } from '@/services/auth/sts';
+import { useLoginStore } from '@/stores/loginStore';
+import { useTheme } from '@/theme/ThemeContext';
+import { makeStyles } from '@/theme/styles';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
+  const theme = useTheme();
+  const s = makeStyles(theme);
+  const savedParams = useLoginStore((st) => st.savedParams);
+  const saveLogin = useLoginStore((st) => st.saveLogin);
+
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const [region, setRegion] = React.useState('us-east-1');
-  const [accountId, setAccountId] = React.useState('');
-  const [iamUsername, setIamUsername] = React.useState('');
-  const [accessKeyId, setAccessKeyId] = React.useState('');
+  const [region, setRegion] = React.useState(savedParams?.region || 'us-east-1');
+  const [accountId, setAccountId] = React.useState(savedParams?.accountId || '');
+  const [iamUsername, setIamUsername] = React.useState(savedParams?.iamUsername || '');
+  const [accessKeyId, setAccessKeyId] = React.useState(savedParams?.accessKeyId || '');
   const [secretAccessKey, setSecretAccessKey] = React.useState('');
   const [mfaCode, setMfaCode] = React.useState('');
 
@@ -50,6 +57,12 @@ export default function LoginScreen() {
         secretAccessKey: secretAccessKey.trim(),
         mfaCode: mfaCode.trim(),
       });
+      saveLogin({
+        region: region.trim(),
+        accountId: accountId.trim(),
+        iamUsername: iamUsername.trim(),
+        accessKeyId: accessKeyId.trim(),
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : t('auth.signInFailed');
       Alert.alert(t('common.error'), message);
@@ -60,91 +73,44 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[s.container, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <Text style={styles.appName}>AWSight</Text>
-          <Text style={styles.subtitle}>{t('auth.signInPrompt')}</Text>
+      <ScrollView contentContainerStyle={s.scrollLogin} keyboardShouldPersistTaps="handled">
+        <View style={s.headerCenter}>
+          <Text style={[s.title, { color: theme.accent }]}>AWSight</Text>
+          <Text style={{ fontSize: 14, color: theme.textSecondary }}>{t('auth.signInPrompt')}</Text>
         </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>{t('auth.region')}</Text>
-          <TextInput
-            style={styles.input}
-            value={region}
-            onChangeText={setRegion}
-            placeholder="us-east-1"
-            placeholderTextColor="#555566"
-            autoCapitalize="none"
-          />
+        <View style={{ width: '100%' }}>
+          <Text style={[s.label, { color: theme.textLabel }]}>{t('auth.region')}</Text>
+          <TextInput style={s.input(theme)} value={region} onChangeText={setRegion} placeholder="us-east-1" placeholderTextColor={theme.placeholder} autoCapitalize="none" />
 
-          <Text style={styles.label}>{t('auth.accountId')}</Text>
-          <TextInput
-            style={styles.input}
-            value={accountId}
-            onChangeText={setAccountId}
-            placeholder="123456789012"
-            placeholderTextColor="#555566"
-            keyboardType="numeric"
-          />
+          <Text style={[s.label, { color: theme.textLabel }]}>{t('auth.accountId')}</Text>
+          <TextInput style={s.input(theme)} value={accountId} onChangeText={setAccountId} placeholder="123456789012" placeholderTextColor={theme.placeholder} keyboardType="numeric" />
 
-          <Text style={styles.label}>{t('auth.iamUsername')}</Text>
-          <TextInput
-            style={styles.input}
-            value={iamUsername}
-            onChangeText={setIamUsername}
-            placeholder={t('auth.iamUsernamePlaceholder')}
-            placeholderTextColor="#555566"
-            autoCapitalize="none"
-          />
+          <Text style={[s.label, { color: theme.textLabel }]}>{t('auth.iamUsername')}</Text>
+          <TextInput style={s.input(theme)} value={iamUsername} onChangeText={setIamUsername} placeholder={t('auth.iamUsernamePlaceholder')} placeholderTextColor={theme.placeholder} autoCapitalize="none" />
 
-          <Text style={styles.label}>{t('auth.accessKeyId')}</Text>
-          <TextInput
-            style={styles.input}
-            value={accessKeyId}
-            onChangeText={setAccessKeyId}
-            placeholder="AKIA..."
-            placeholderTextColor="#555566"
-            autoCapitalize="none"
-          />
+          <Text style={[s.label, { color: theme.textLabel }]}>{t('auth.accessKeyId')}</Text>
+          <TextInput style={s.input(theme)} value={accessKeyId} onChangeText={setAccessKeyId} placeholder="AKIA..." placeholderTextColor={theme.placeholder} autoCapitalize="none" />
 
-          <Text style={styles.label}>{t('auth.secretAccessKey')}</Text>
-          <TextInput
-            style={styles.input}
-            value={secretAccessKey}
-            onChangeText={setSecretAccessKey}
-            placeholder="••••••••••••••••"
-            placeholderTextColor="#555566"
-            secureTextEntry
-            autoCapitalize="none"
-          />
+          <Text style={[s.label, { color: theme.textLabel }]}>{t('auth.secretAccessKey')}</Text>
+          <TextInput style={s.input(theme)} value={secretAccessKey} onChangeText={setSecretAccessKey} placeholder="••••••••••••••••" placeholderTextColor={theme.placeholder} secureTextEntry autoCapitalize="none" />
 
-          <Text style={styles.label}>{t('auth.mfaCode')}</Text>
-          <TextInput
-            style={styles.input}
-            value={mfaCode}
-            onChangeText={setMfaCode}
-            placeholder="000000"
-            placeholderTextColor="#555566"
-            keyboardType="numeric"
-            maxLength={6}
-          />
+          <Text style={[s.label, { color: theme.textLabel }]}>{t('auth.mfaCode')}</Text>
+          <TextInput style={s.input(theme)} value={mfaCode} onChangeText={setMfaCode} placeholder="000000" placeholderTextColor={theme.placeholder} keyboardType="numeric" maxLength={6} />
 
           {isLoading ? (
-            <ActivityIndicator size="large" color="#FF9900" style={styles.loader} />
+            <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 24 }} />
           ) : (
             <TouchableOpacity
-              style={[styles.button, !isFormValid && styles.buttonDisabled]}
+              style={[s.btnPrimary, (!isFormValid || isLoading) && { opacity: 0.4 }, { marginTop: 24, backgroundColor: theme.accent }]}
               onPress={handleSignIn}
               disabled={!isFormValid || isLoading}
               activeOpacity={0.8}
             >
-              <Text style={styles.buttonText}>{t('common.signIn')}</Text>
+              <Text style={[s.btnPrimaryText, { color: theme.accentText }]}>{t('common.signIn')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -152,33 +118,3 @@ export default function LoginScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
-  scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center' },
-  header: { alignItems: 'center', marginBottom: 32 },
-  appName: { fontSize: 36, fontWeight: '700', color: '#FF9900', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#a0a0b0' },
-  form: { width: '100%' },
-  label: { fontSize: 13, fontWeight: '600', color: '#8888aa', marginBottom: 6, marginTop: 12, textTransform: 'uppercase' },
-  input: {
-    backgroundColor: '#0f0f1a',
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 15,
-    color: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#2a2a3e',
-  },
-  button: {
-    marginTop: 24,
-    height: 52,
-    borderRadius: 12,
-    backgroundColor: '#FF9900',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: { opacity: 0.4 },
-  buttonText: { fontSize: 16, fontWeight: '600', color: '#1a1a2e' },
-  loader: { marginTop: 24 },
-});
