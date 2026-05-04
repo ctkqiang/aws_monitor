@@ -8,13 +8,19 @@ function createAwsConfig(region?: string) {
   if (!credentials) {
     throw new Error('Not authenticated. Please sign in first.');
   }
+
+  const creds: { accessKeyId: string; secretAccessKey: string; sessionToken?: string } = {
+    accessKeyId: credentials.accessKeyId,
+    secretAccessKey: credentials.secretAccessKey,
+  };
+
+  if (credentials.sessionToken) {
+    creds.sessionToken = credentials.sessionToken;
+  }
+
   return {
     region: region || useAuthStore.getState().region,
-    credentials: {
-      accessKeyId: credentials.accessKeyId,
-      secretAccessKey: credentials.secretAccessKey,
-      sessionToken: credentials.sessionToken,
-    },
+    credentials: creds,
   };
 }
 

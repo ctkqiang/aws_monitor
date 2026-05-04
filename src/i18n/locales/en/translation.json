@@ -18,33 +18,27 @@
   "auth": {
     "signInPrompt": "Sign in with your AWS IAM credentials",
     "signingIn": "Signing in...",
-    "signInFailed": "Sign in failed. Please check your credentials and MFA code.",
+    "signInFailed": "Sign in failed. Check your credentials.",
     "signedOut": "You have been signed out.",
-    "fillAllFields": "Please fill in all fields with valid values.",
+    "fillAllFields": "Please fill in all fields.",
     "region": "AWS Region",
-    "accountId": "AWS Account ID",
-    "iamUsername": "IAM Username",
-    "iamUsernamePlaceholder": "your-iam-username",
     "accessKeyId": "Access Key ID",
     "secretAccessKey": "Secret Access Key",
-    "mfaCode": "MFA Code (6 digits)",
     "resetCredentials": "Reset Saved Credentials",
-    "resetConfirm": "This will delete all saved login information. Continue?",
-    "resetDone": "Saved credentials have been cleared.",
+    "resetConfirm": "Delete all saved login info?",
+    "resetDone": "Saved credentials cleared.",
     "theme": "Theme",
     "themeMode": "Mode"
   },
   "tabs": { "logs": "CloudWatch", "ecs": "ECS", "ecr": "ECR" },
   "screens": {
     "logGroups": { "title": "Log Groups", "searchPlaceholder": "Search log groups...", "noGroups": "No log groups found" },
-    "logStreams": { "title": "Log Streams", "noStreams": "No log streams found" },
-    "logEvents": { "title": "Log Events", "noEvents": "No log events found", "searchPlaceholder": "Filter events..." },
     "ecsServices": { "title": "ECS Services", "selectCluster": "Select a cluster", "noClusters": "No clusters found", "noServices": "No services found", "restartConfirm": "Restart service {{name}}?", "restartSuccess": "Restart triggered successfully", "restartFailed": "Failed to restart service", "running": "Running", "desired": "Desired", "status": "Status" },
     "ecrRepos": { "title": "ECR Repositories", "noRepos": "No repositories found", "images": "Images", "noImages": "No images found" },
-    "settings": { "title": "Settings", "region": "AWS Region", "regionHint": "Override the default region from .env", "clearCache": "Clear Cache", "clearCacheSuccess": "Cache cleared successfully", "signOut": "Sign Out", "signOutConfirm": "Are you sure you want to sign out?" }
+    "settings": { "title": "Settings", "region": "AWS Region", "regionHint": "Override the default region", "clearCache": "Clear Cache", "clearCacheSuccess": "Cache cleared", "signOut": "Sign Out", "signOutConfirm": "Are you sure you want to sign out?" }
   },
   "errors": {
-    "missingPermission": "Missing permission: {{action}}. Please contact your AWS administrator.",
+    "missingPermission": "Missing permission: {{action}}. Contact your AWS admin.",
     "networkError": "Network error. Check your connection.",
     "unknown": "An unexpected error occurred.",
     "invalidRegion": "Invalid AWS region: {{region}}"

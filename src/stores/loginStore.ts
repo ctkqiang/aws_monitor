@@ -4,8 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface LoginParams {
   region: string;
-  accountId: string;
-  iamUsername: string;
   accessKeyId: string;
 }
 

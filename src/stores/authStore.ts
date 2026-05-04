@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export interface AwsCredentials {
   accessKeyId: string;
   secretAccessKey: string;
-  sessionToken: string;
+  sessionToken?: string;
   expiration?: Date;
 }
 

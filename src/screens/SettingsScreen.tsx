@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, Alert, ScrollView, StyleSheet } from 'react-native';
-import { signOut } from '@/services/auth/sts';
+import { signOut } from '@/services/auth/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { useLoginStore } from '@/stores/loginStore';
 import { useTheme, setThemeMode, getThemeMode } from '@/theme/ThemeContext';
@@ -43,13 +43,7 @@ export default function SettingsScreen() {
       t('screens.settings.signOutConfirm'),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.confirm'),
-          style: 'destructive',
-          onPress: () => {
-            signOut();
-          },
-        },
+        { text: t('common.confirm'), style: 'destructive', onPress: signOut },
       ]
     );
   };
@@ -75,7 +69,7 @@ export default function SettingsScreen() {
         <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('auth.theme')}</Text>
         <TouchableOpacity style={[styles.btnSecondary, { backgroundColor: theme.btnSecondary }]} onPress={cycleTheme} activeOpacity={0.8}>
           <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>
-            {t('auth.themeMode')}: {mode === 'system' ? '🌓 System' : mode === 'light' ? '☀️ Light' : '🌙 Dark'}
+            {t('auth.themeMode')}: {mode === 'system' ? 'System' : mode === 'light' ? 'Light' : 'Dark'}
           </Text>
         </TouchableOpacity>
       </View>
