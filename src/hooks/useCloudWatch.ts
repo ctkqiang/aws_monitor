@@ -98,6 +98,7 @@ export function useLogEvents(logGroupName: string | null, logStreamName: string 
     },
     enabled: !!logGroupName && !!logStreamName,
     staleTime: 15000,
+    refetchInterval: 5000,
   });
 }
 

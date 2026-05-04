@@ -4,8 +4,14 @@ import { View, Text, TouchableOpacity, Alert, ScrollView, StyleSheet } from 'rea
 import { signOut } from '@/services/auth/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { useLoginStore } from '@/stores/loginStore';
-import { useTheme, setThemeMode, getThemeMode } from '@/theme/ThemeContext';
+import { useTheme, setThemeMode, useResolvedThemeMode, useThemeMode } from '@/theme/ThemeContext';
 import DebugLogScreen from './DebugLogScreen';
+
+const THEME_OPTIONS: Array<{ mode: 'system' | 'light' | 'dark'; label: string; icon: string; desc: string }> = [
+  { mode: 'system', label: 'System', icon: '🌓', desc: 'Follow device settings' },
+  { mode: 'light', label: 'Light', icon: '☀️', desc: 'Always light' },
+  { mode: 'dark', label: 'Dark', icon: '🌙', desc: 'Always dark' },
+];
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -14,7 +20,8 @@ export default function SettingsScreen() {
   const region = useAuthStore((s) => s.region);
   const resetLogin = useLoginStore((st) => st.resetLogin);
   const hasSavedCredentials = useLoginStore((st) => st.hasSavedCredentials);
-  const [mode, setMode] = React.useState<string>(getThemeMode());
+  const themeMode = useThemeMode();
+  const resolvedMode = useResolvedThemeMode();
   const [showDebug, setShowDebug] = React.useState(false);
 
   if (showDebug) {
@@ -54,13 +61,8 @@ export default function SettingsScreen() {
     );
   };
 
-  const cycleTheme = () => {
-    const modes: Array<'system' | 'light' | 'dark'> = ['system', 'light', 'dark'];
-    const current = getThemeMode();
-    const idx = modes.indexOf(current);
-    const next = modes[(idx + 1) % modes.length];
-    setThemeMode(next);
-    setMode(next);
+  const handleThemeChange = (mode: 'system' | 'light' | 'dark') => {
+    setThemeMode(mode);
   };
 
   return (
@@ -73,17 +75,41 @@ export default function SettingsScreen() {
 
       <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
         <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('auth.theme')}</Text>
-        <TouchableOpacity style={[styles.btnSecondary, { backgroundColor: theme.btnSecondary }]} onPress={cycleTheme} activeOpacity={0.8}>
-          <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>
-            {t('auth.themeMode')}: {mode === 'system' ? 'System' : mode === 'light' ? 'Light' : 'Dark'}
-          </Text>
-        </TouchableOpacity>
+        <Text style={[styles.hint, { color: theme.placeholder, marginBottom: 12 }]}>
+          Current: {resolvedMode === 'dark' ? 'Dark' : 'Light'}
+        </Text>
+        {THEME_OPTIONS.map((opt) => {
+          const isSelected = themeMode === opt.mode;
+          return (
+            <TouchableOpacity
+              key={opt.mode}
+              style={[
+                styles.themeRow,
+                { borderColor: isSelected ? theme.accent : theme.border },
+                isSelected && { backgroundColor: resolvedMode === 'dark' ? '#1f1f38' : '#fff8ec' },
+              ]}
+              onPress={() => handleThemeChange(opt.mode)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.themeInfo}>
+                <Text style={[styles.themeIcon]}>{opt.icon}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.themeLabel, { color: theme.text }]}>{opt.label}</Text>
+                  <Text style={[styles.themeDesc, { color: theme.textMuted }]}>{opt.desc}</Text>
+                </View>
+              </View>
+              <View style={[styles.radio, { borderColor: theme.border }, isSelected && { borderColor: theme.accent, backgroundColor: theme.accent }]}>
+                {isSelected && <Text style={styles.radioDot}>✓</Text>}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
         <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>Debug</Text>
         <TouchableOpacity style={[styles.btnSecondary, { backgroundColor: theme.btnSecondary }]} onPress={() => setShowDebug(true)} activeOpacity={0.8}>
-          <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>📋 Developer Logs</Text>
+          <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>Developer Logs</Text>
         </TouchableOpacity>
       </View>
 
@@ -115,12 +141,25 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
-  section: { marginBottom: 24, borderRadius: 12, padding: 16 },
-  sectionTitle: { fontSize: 14, fontWeight: '600', marginBottom: 12, textTransform: 'uppercase' },
-  value: { fontSize: 16, marginBottom: 4 },
+  section: { marginBottom: 24, borderRadius: 14, padding: 16 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
+  value: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
   hint: { fontSize: 12 },
-  btnPrimary: { borderRadius: 8, padding: 14, alignItems: 'center' },
+  themeRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 14, borderRadius: 10, borderWidth: 1.5, marginBottom: 8,
+  },
+  themeInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  themeIcon: { fontSize: 22, marginRight: 12 },
+  themeLabel: { fontSize: 15, fontWeight: '600' },
+  themeDesc: { fontSize: 12, marginTop: 2 },
+  radio: {
+    width: 24, height: 24, borderRadius: 12, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  radioDot: { fontSize: 12, color: '#ffffff', fontWeight: '700' },
+  btnPrimary: { borderRadius: 10, padding: 14, alignItems: 'center' },
   btnPrimaryText: { fontSize: 15, fontWeight: '600' },
-  btnSecondary: { borderRadius: 8, padding: 14, alignItems: 'center' },
+  btnSecondary: { borderRadius: 10, padding: 14, alignItems: 'center' },
   btnSecondaryText: { fontSize: 15, fontWeight: '600' },
 });

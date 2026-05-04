@@ -4,9 +4,10 @@ import {
   ListClustersCommand,
   ListServicesCommand,
   DescribeServicesCommand,
+  DescribeTaskDefinitionCommand,
   UpdateServiceCommand,
-  Cluster,
   Service,
+  TaskDefinition,
 } from '@aws-sdk/client-ecs';
 import { createECSClient } from '@/services/aws/client';
 import { Logger } from '@/utils/logger';
@@ -68,6 +69,21 @@ export function useServices(clusterArn: string | null) {
     },
     enabled: !!clusterArn,
     staleTime: 30000,
+  });
+}
+
+export function useTaskDefinition(taskDefArn: string | null) {
+  return useQuery<TaskDefinition>({
+    queryKey: ['ecs-task-def', taskDefArn],
+    queryFn: async () => {
+      if (!taskDefArn) throw new Error('No task definition ARN');
+      const client = createECSClient();
+      const res = await client.send(new DescribeTaskDefinitionCommand({ taskDefinition: taskDefArn }));
+      if (!res.taskDefinition) throw new Error('Task definition not found');
+      return res.taskDefinition;
+    },
+    enabled: !!taskDefArn,
+    staleTime: 60000,
   });
 }
 

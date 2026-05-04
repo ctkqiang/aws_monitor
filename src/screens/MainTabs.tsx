@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme, setThemeMode, getThemeMode } from '@/theme/ThemeContext';
+import { useTheme } from '@/theme/ThemeContext';
 import LogGroupsScreen from './LogGroupsScreen';
 import ECSServicesScreen from './ECSServicesScreen';
 import ECRReposScreen from './ECRReposScreen';
