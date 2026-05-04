@@ -3,7 +3,6 @@ import 'react-native-url-polyfill/auto';
 import './src/i18n';
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
@@ -14,6 +13,7 @@ const queryClient = new QueryClient();
 
 export default function App() {
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
+
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style="light" />

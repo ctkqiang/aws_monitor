@@ -12,9 +12,8 @@ export interface AwsCredentials {
 export interface AuthState {
   isSignedIn: boolean;
   credentials: AwsCredentials | null;
-  identityId: string | null;
   region: string;
-  setCredentials: (creds: AwsCredentials, identityId: string) => void;
+  setCredentials: (creds: AwsCredentials) => void;
   setRegion: (region: string) => void;
   signOut: () => void;
 }
@@ -24,18 +23,16 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       isSignedIn: false,
       credentials: null,
-      identityId: null,
       region: 'us-east-1',
-      setCredentials: (creds, identityId) => set({ credentials: creds, identityId, isSignedIn: true }),
+      setCredentials: (creds) => set({ credentials: creds, isSignedIn: true }),
       setRegion: (region) => set({ region }),
-      signOut: () => set({ credentials: null, identityId: null, isSignedIn: false }),
+      signOut: () => set({ credentials: null, isSignedIn: false }),
     }),
     {
       name: 'awsight-auth',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         credentials: state.credentials,
-        identityId: state.identityId,
         isSignedIn: state.isSignedIn,
         region: state.region,
       }),

@@ -10,18 +10,24 @@
     "back": "Back",
     "search": "Search",
     "noData": "No data available",
-    "signIn": "Sign in with Amazon",
+    "signIn": "Sign In",
     "signOut": "Sign Out",
     "settings": "Settings",
     "close": "Close"
   },
   "auth": {
-    "signInPrompt": "Sign in to monitor your AWS resources",
+    "signInPrompt": "Sign in with your AWS IAM credentials",
     "signingIn": "Signing in...",
-    "signInFailed": "Sign in failed. Please try again.",
+    "signInFailed": "Sign in failed. Please check your credentials and MFA code.",
     "signedOut": "You have been signed out.",
-    "configMissing": "Configuration missing. Please set up .env file as described in README.",
-    "cognitoFailed": "Failed to obtain AWS credentials. Check your Cognito Identity Pool configuration."
+    "fillAllFields": "Please fill in all fields with valid values.",
+    "region": "AWS Region",
+    "accountId": "AWS Account ID",
+    "iamUsername": "IAM Username",
+    "iamUsernamePlaceholder": "your-iam-username",
+    "accessKeyId": "Access Key ID",
+    "secretAccessKey": "Secret Access Key",
+    "mfaCode": "MFA Code (6 digits)"
   },
   "tabs": { "logs": "CloudWatch", "ecs": "ECS", "ecr": "ECR" },
   "screens": {

@@ -1,12 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, Alert, ScrollView, StyleSheet } from 'react-native';
-import { signOutFromAmazon } from '@/services/auth/cognito';
+import { signOut } from '@/services/auth/sts';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
-  const signOut = useAuthStore((s) => s.signOut);
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const region = useAuthStore((s) => s.region);
 
@@ -24,7 +23,7 @@ export default function SettingsScreen() {
           text: t('common.confirm'),
           style: 'destructive',
           onPress: () => {
-            signOutFromAmazon().catch(() => signOut());
+            signOut();
           },
         },
       ]
