@@ -1,20 +1,23 @@
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
+import './src/i18n';
+
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/authStore';
+import LoginScreen from '@/screens/LoginScreen';
+import MainTabs from '@/screens/MainTabs';
+
+const queryClient = new QueryClient();
 
 export default function App() {
+  const isSignedIn = useAuthStore((s) => s.isSignedIn);
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <QueryClientProvider client={queryClient}>
+      <StatusBar style="light" />
+      {isSignedIn ? <MainTabs /> : <LoginScreen />}
+    </QueryClientProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

@@ -1,0 +1,41 @@
+{
+  "common": {
+    "refresh": "Refresh",
+    "restart": "Restart",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "back": "Back",
+    "search": "Search",
+    "noData": "No data available",
+    "signIn": "Sign in with Amazon",
+    "signOut": "Sign Out",
+    "settings": "Settings",
+    "close": "Close"
+  },
+  "auth": {
+    "signInPrompt": "Sign in to monitor your AWS resources",
+    "signingIn": "Signing in...",
+    "signInFailed": "Sign in failed. Please try again.",
+    "signedOut": "You have been signed out.",
+    "configMissing": "Configuration missing. Please set up .env file as described in README.",
+    "cognitoFailed": "Failed to obtain AWS credentials. Check your Cognito Identity Pool configuration."
+  },
+  "tabs": { "logs": "CloudWatch", "ecs": "ECS", "ecr": "ECR" },
+  "screens": {
+    "logGroups": { "title": "Log Groups", "searchPlaceholder": "Search log groups...", "noGroups": "No log groups found" },
+    "logStreams": { "title": "Log Streams", "noStreams": "No log streams found" },
+    "logEvents": { "title": "Log Events", "noEvents": "No log events found", "searchPlaceholder": "Filter events..." },
+    "ecsServices": { "title": "ECS Services", "selectCluster": "Select a cluster", "noClusters": "No clusters found", "noServices": "No services found", "restartConfirm": "Restart service {{name}}?", "restartSuccess": "Restart triggered successfully", "restartFailed": "Failed to restart service", "running": "Running", "desired": "Desired", "status": "Status" },
+    "ecrRepos": { "title": "ECR Repositories", "noRepos": "No repositories found", "images": "Images", "noImages": "No images found" },
+    "settings": { "title": "Settings", "region": "AWS Region", "regionHint": "Override the default region from .env", "clearCache": "Clear Cache", "clearCacheSuccess": "Cache cleared successfully", "signOut": "Sign Out", "signOutConfirm": "Are you sure you want to sign out?" }
+  },
+  "errors": {
+    "missingPermission": "Missing permission: {{action}}. Please contact your AWS administrator.",
+    "networkError": "Network error. Check your connection.",
+    "unknown": "An unexpected error occurred.",
+    "invalidRegion": "Invalid AWS region: {{region}}"
+  }
+}

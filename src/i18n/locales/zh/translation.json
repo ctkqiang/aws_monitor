@@ -1,0 +1,41 @@
+{
+  "common": {
+    "refresh": "刷新",
+    "restart": "重启",
+    "cancel": "取消",
+    "confirm": "确认",
+    "loading": "加载中...",
+    "error": "发生错误",
+    "retry": "重试",
+    "back": "返回",
+    "search": "搜索",
+    "noData": "暂无数据",
+    "signIn": "使用 Amazon 登录",
+    "signOut": "退出登录",
+    "settings": "设置",
+    "close": "关闭"
+  },
+  "auth": {
+    "signInPrompt": "登录以监控您的 AWS 资源",
+    "signingIn": "登录中...",
+    "signInFailed": "登录失败，请重试。",
+    "signedOut": "您已退出登录。",
+    "configMissing": "配置缺失。请按照 README 说明设置 .env 文件。",
+    "cognitoFailed": "获取 AWS 凭证失败。请检查 Cognito Identity Pool 配置。"
+  },
+  "tabs": { "logs": "CloudWatch", "ecs": "ECS", "ecr": "ECR" },
+  "screens": {
+    "logGroups": { "title": "日志组", "searchPlaceholder": "搜索日志组...", "noGroups": "未找到日志组" },
+    "logStreams": { "title": "日志流", "noStreams": "未找到日志流" },
+    "logEvents": { "title": "日志事件", "noEvents": "未找到日志事件", "searchPlaceholder": "过滤事件..." },
+    "ecsServices": { "title": "ECS 服务", "selectCluster": "选择集群", "noClusters": "未找到集群", "noServices": "未找到服务", "restartConfirm": "重启服务 {{name}}？", "restartSuccess": "重启已触发", "restartFailed": "重启失败", "running": "运行中", "desired": "期望数", "status": "状态" },
+    "ecrRepos": { "title": "ECR 仓库", "noRepos": "未找到仓库", "images": "镜像", "noImages": "未找到镜像" },
+    "settings": { "title": "设置", "region": "AWS 区域", "regionHint": "覆盖 .env 中的默认区域", "clearCache": "清除缓存", "clearCacheSuccess": "缓存已清除", "signOut": "退出登录", "signOutConfirm": "确定要退出登录吗？" }
+  },
+  "errors": {
+    "missingPermission": "缺少权限: {{action}}。请联系您的 AWS 管理员。",
+    "networkError": "网络错误，请检查连接。",
+    "unknown": "发生未知错误。",
+    "invalidRegion": "无效的 AWS 区域: {{region}}"
+  }
+}
