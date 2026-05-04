@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
 import { ThemeProvider, useTheme } from '@/theme/ThemeContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LoginScreen from '@/screens/LoginScreen';
 import MainTabs from '@/screens/MainTabs';
 
@@ -34,7 +35,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AppContent />
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
         </ThemeProvider>
       </SafeAreaProvider>
     </QueryClientProvider>

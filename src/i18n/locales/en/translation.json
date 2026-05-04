@@ -28,11 +28,18 @@
     "resetConfirm": "Delete all saved login info?",
     "resetDone": "Saved credentials cleared.",
     "theme": "Theme",
-    "themeMode": "Mode"
+    "themeMode": "Mode",
+    "sessionExpired": "Session expired. Please sign in again.",
+    "connectionError": "Unable to connect to AWS. Check network.",
+    "timeoutError": "Request timed out. Please try again.",
+    "rateLimited": "Too many requests. Please wait a moment.",
+    "permissionDenied": "Access denied. Check IAM permissions."
   },
   "tabs": { "logs": "CloudWatch", "ecs": "ECS", "ecr": "ECR" },
   "screens": {
     "logGroups": { "title": "Log Groups", "searchPlaceholder": "Search log groups...", "noGroups": "No log groups found" },
+    "logStreams": { "title": "Log Streams", "noStreams": "No log streams found" },
+    "logEvents": { "title": "Log Events", "noEvents": "No log events found", "searchPlaceholder": "Filter events..." },
     "ecsServices": { "title": "ECS Services", "selectCluster": "Select a cluster", "noClusters": "No clusters found", "noServices": "No services found", "restartConfirm": "Restart service {{name}}?", "restartSuccess": "Restart triggered successfully", "restartFailed": "Failed to restart service", "running": "Running", "desired": "Desired", "status": "Status" },
     "ecrRepos": { "title": "ECR Repositories", "noRepos": "No repositories found", "images": "Images", "noImages": "No images found" },
     "settings": { "title": "Settings", "region": "AWS Region", "regionHint": "Override the default region", "clearCache": "Clear Cache", "clearCacheSuccess": "Cache cleared", "signOut": "Sign Out", "signOutConfirm": "Are you sure you want to sign out?" }

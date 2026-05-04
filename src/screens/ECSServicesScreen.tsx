@@ -8,10 +8,10 @@ import { useUIStore } from '@/stores/uiStore';
 export default function ECSServicesScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { data: clusters, isLoading: clustersLoading } = useClusters();
+  const { data: clusters, isLoading: clustersLoading, error: clustersError } = useClusters();
   const selectedCluster = useUIStore((s) => s.selectedCluster);
   const setSelectedCluster = useUIStore((s) => s.setSelectedCluster);
-  const { data: services, isLoading: servicesLoading } = useServices(selectedCluster);
+  const { data: services, isLoading: servicesLoading, error: servicesError } = useServices(selectedCluster);
   const restart = useRestartService();
 
   const handleRestart = (serviceName: string) => {
@@ -93,6 +93,10 @@ export default function ECSServicesScreen() {
         </View>
         {servicesLoading ? (
           <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
+        ) : servicesError ? (
+          <View style={styles.centered}>
+            <Text style={[styles.emptyText, { color: '#e74c3c' }]}>{(servicesError as any)?.message || t('common.error')}</Text>
+          </View>
         ) : (
           <FlatList
             data={services || []}
@@ -114,6 +118,10 @@ export default function ECSServicesScreen() {
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {clustersLoading ? (
         <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
+      ) : clustersError ? (
+        <View style={styles.centered}>
+          <Text style={[styles.emptyText, { color: '#e74c3c' }]}>{(clustersError as any)?.message || t('common.error')}</Text>
+        </View>
       ) : (
         <FlatList
           data={clusters || []}

@@ -5,6 +5,7 @@ import { signOut } from '@/services/auth/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { useLoginStore } from '@/stores/loginStore';
 import { useTheme, setThemeMode, getThemeMode } from '@/theme/ThemeContext';
+import DebugLogScreen from './DebugLogScreen';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -14,6 +15,11 @@ export default function SettingsScreen() {
   const resetLogin = useLoginStore((st) => st.resetLogin);
   const hasSavedCredentials = useLoginStore((st) => st.hasSavedCredentials);
   const [mode, setMode] = React.useState<string>(getThemeMode());
+  const [showDebug, setShowDebug] = React.useState(false);
+
+  if (showDebug) {
+    return <DebugLogScreen onClose={() => setShowDebug(false)} />;
+  }
 
   const handleClearCache = () => {
     Alert.alert('', t('screens.settings.clearCacheSuccess'));
@@ -71,6 +77,13 @@ export default function SettingsScreen() {
           <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>
             {t('auth.themeMode')}: {mode === 'system' ? 'System' : mode === 'light' ? 'Light' : 'Dark'}
           </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
+        <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>Debug</Text>
+        <TouchableOpacity style={[styles.btnSecondary, { backgroundColor: theme.btnSecondary }]} onPress={() => setShowDebug(true)} activeOpacity={0.8}>
+          <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>📋 Developer Logs</Text>
         </TouchableOpacity>
       </View>
 

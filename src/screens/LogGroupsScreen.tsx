@@ -47,7 +47,7 @@ export default function LogGroupsScreen() {
         <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
       ) : error ? (
         <View style={styles.centered}>
-          <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t('common.error')}</Text>
+          <Text style={[styles.emptyText, { color: '#e74c3c' }]}>{(error as any)?.message || t('common.error')}</Text>
           <TouchableOpacity onPress={() => refetch()} style={[styles.btn, { backgroundColor: theme.accent }]}>
             <Text style={[styles.btnText, { color: theme.accentText }]}>{t('common.retry')}</Text>
           </TouchableOpacity>

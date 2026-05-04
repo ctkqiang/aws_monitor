@@ -9,21 +9,30 @@ import {
   Service,
 } from '@aws-sdk/client-ecs';
 import { createECSClient } from '@/services/aws/client';
+import { Logger } from '@/utils/logger';
 import { Alert } from 'react-native';
+
+const TAG = 'ECS';
 
 export function useClusters() {
   return useQuery<string[]>({
     queryKey: ['ecs-clusters'],
     queryFn: async () => {
-      const client = createECSClient();
-      const arns: string[] = [];
-      let nextToken: string | undefined;
-      do {
-        const res = await client.send(new ListClustersCommand({ nextToken }));
-        if (res.clusterArns) arns.push(...res.clusterArns);
-        nextToken = res.nextToken;
-      } while (nextToken);
-      return arns;
+      try {
+        const client = createECSClient();
+        const arns: string[] = [];
+        let nextToken: string | undefined;
+        do {
+          const res = await client.send(new ListClustersCommand({ nextToken }));
+          if (res.clusterArns) arns.push(...res.clusterArns);
+          nextToken = res.nextToken;
+        } while (nextToken);
+        Logger.info(TAG, `Fetched ${arns.length} clusters`);
+        return arns;
+      } catch (e: any) {
+        Logger.error(TAG, 'ListClusters failed', { error: e.message, code: e.name });
+        throw e;
+      }
     },
     staleTime: 30000,
   });
@@ -34,22 +43,28 @@ export function useServices(clusterArn: string | null) {
     queryKey: ['ecs-services', clusterArn],
     queryFn: async () => {
       if (!clusterArn) return [];
-      const client = createECSClient();
-      const serviceArns: string[] = [];
-      let nextToken: string | undefined;
-      do {
-        const res = await client.send(new ListServicesCommand({ cluster: clusterArn, nextToken }));
-        if (res.serviceArns) serviceArns.push(...res.serviceArns);
-        nextToken = res.nextToken;
-      } while (nextToken);
+      try {
+        const client = createECSClient();
+        const serviceArns: string[] = [];
+        let nextToken: string | undefined;
+        do {
+          const res = await client.send(new ListServicesCommand({ cluster: clusterArn, nextToken }));
+          if (res.serviceArns) serviceArns.push(...res.serviceArns);
+          nextToken = res.nextToken;
+        } while (nextToken);
 
-      const services: Service[] = [];
-      for (let i = 0; i < serviceArns.length; i += 10) {
-        const batch = serviceArns.slice(i, i + 10);
-        const desc = await client.send(new DescribeServicesCommand({ cluster: clusterArn, services: batch }));
-        if (desc.services) services.push(...desc.services);
+        const services: Service[] = [];
+        for (let i = 0; i < serviceArns.length; i += 10) {
+          const batch = serviceArns.slice(i, i + 10);
+          const desc = await client.send(new DescribeServicesCommand({ cluster: clusterArn, services: batch }));
+          if (desc.services) services.push(...desc.services);
+        }
+        Logger.info(TAG, `Fetched ${services.length} services for ${clusterArn.split('/').pop()}`);
+        return services;
+      } catch (e: any) {
+        Logger.error(TAG, 'ListServices/DescribeServices failed', { clusterArn, error: e.message, code: e.name });
+        throw e;
       }
-      return services;
     },
     enabled: !!clusterArn,
     staleTime: 30000,
@@ -67,11 +82,13 @@ export function useRestartService() {
         service: serviceName,
         forceNewDeployment: true,
       }));
+      Logger.info(TAG, `Restarted service ${serviceName}`);
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['ecs-services', vars.clusterArn] });
     },
     onError: (err: any) => {
+      Logger.error(TAG, 'Restart service failed', { error: err.message });
       Alert.alert('Restart Failed', err?.message || 'Unknown error');
     },
   });

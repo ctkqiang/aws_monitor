@@ -7,6 +7,7 @@ export interface AwsCredentials {
   secretAccessKey: string;
   sessionToken?: string;
   expiration?: Date;
+  expiresAt?: number;
 }
 
 export interface AuthState {

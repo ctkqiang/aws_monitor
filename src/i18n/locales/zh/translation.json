@@ -28,17 +28,24 @@
     "resetConfirm": "删除所有已保存的登录信息？",
     "resetDone": "已保存的凭证已清除。",
     "theme": "主题",
-    "themeMode": "模式"
+    "themeMode": "模式",
+    "sessionExpired": "会话已过期。请重新登录。",
+    "connectionError": "无法连接 AWS。请检查网络。",
+    "timeoutError": "请求超时。请重试。",
+    "rateLimited": "请求过于频繁。请稍等。",
+    "permissionDenied": "访问被拒绝。请检查 IAM 权限。"
   },
   "tabs": { "logs": "CloudWatch", "ecs": "ECS", "ecr": "ECR" },
   "screens": {
     "logGroups": { "title": "日志组", "searchPlaceholder": "搜索日志组...", "noGroups": "未找到日志组" },
+    "logStreams": { "title": "日志流", "noStreams": "未找到日志流" },
+    "logEvents": { "title": "日志事件", "noEvents": "未找到日志事件", "searchPlaceholder": "过滤事件..." },
     "ecsServices": { "title": "ECS 服务", "selectCluster": "选择集群", "noClusters": "未找到集群", "noServices": "未找到服务", "restartConfirm": "重启服务 {{name}}？", "restartSuccess": "重启已触发", "restartFailed": "重启失败", "running": "运行中", "desired": "期望数", "status": "状态" },
     "ecrRepos": { "title": "ECR 仓库", "noRepos": "未找到仓库", "images": "镜像", "noImages": "未找到镜像" },
     "settings": { "title": "设置", "region": "AWS 区域", "regionHint": "覆盖默认区域", "clearCache": "清除缓存", "clearCacheSuccess": "缓存已清除", "signOut": "退出登录", "signOutConfirm": "确定要退出登录吗？" }
   },
   "errors": {
-    "missingPermission": "缺少权限: {{action}}。请联系您的 AWS 管理员。",
+    "missingPermission": "缺少权限: {{action}}。联系 AWS 管理员。",
     "networkError": "网络错误，请检查连接。",
     "unknown": "发生未知错误。",
     "invalidRegion": "无效的 AWS 区域: {{region}}"

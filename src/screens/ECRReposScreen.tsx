@@ -7,7 +7,7 @@ import { useRepositories, useImages } from '@/hooks/useECR';
 export default function ECRReposScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { data: repos, isLoading } = useRepositories();
+  const { data: repos, isLoading, error: reposError } = useRepositories();
   const [selectedRepo, setSelectedRepo] = React.useState<string | null>(null);
 
   if (selectedRepo) {
@@ -32,6 +32,10 @@ export default function ECRReposScreen() {
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {isLoading ? (
         <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
+      ) : reposError ? (
+        <View style={styles.centered}>
+          <Text style={[styles.emptyText, { color: '#e74c3c' }]}>{(reposError as any)?.message || t('common.error')}</Text>
+        </View>
       ) : (
         <FlatList
           data={repos || []}
