@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
-  CloudWatchLogsClient,
   DescribeLogGroupsCommand,
   DescribeLogStreamsCommand,
   GetLogEventsCommand,
@@ -13,6 +12,7 @@ import { createCloudWatchLogsClient } from '@/services/aws/client';
 import { Logger } from '@/utils/logger';
 
 const TAG = 'CloudWatch';
+const MAX_EVENTS_PER_FETCH = 500;
 
 export function useLogGroups() {
   return useQuery<LogGroup[]>({
@@ -35,32 +35,8 @@ export function useLogGroups() {
       }
     },
     staleTime: 30000,
-    refetchInterval: false as const,
-  });
-}
-
-export function useLogGroupsLive(intervalMs: number = 5000) {
-  return useQuery<LogGroup[]>({
-    queryKey: ['log-groups-live'],
-    queryFn: async () => {
-      try {
-        const client = createCloudWatchLogsClient();
-        const groups: LogGroup[] = [];
-        let nextToken: string | undefined;
-        do {
-          const res = await client.send(new DescribeLogGroupsCommand({ nextToken, limit: 50 }));
-          if (res.logGroups) groups.push(...res.logGroups);
-          nextToken = res.nextToken;
-        } while (nextToken);
-        return groups;
-      } catch (e: any) {
-        Logger.error(TAG, 'DescribeLogGroups failed', { error: e.message, code: e.name });
-        throw e;
-      }
-    },
-    staleTime: intervalMs,
-    refetchInterval: intervalMs,
-    enabled: true,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }
 
@@ -93,6 +69,8 @@ export function useLogStreams(logGroupName: string | null) {
     },
     enabled: !!logGroupName,
     staleTime: 30000,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }
 
@@ -105,17 +83,28 @@ export function useLogEvents(logGroupName: string | null, logStreamName: string 
         const client = createCloudWatchLogsClient();
         const events: OutputLogEvent[] = [];
         let nextToken: string | undefined;
+        let pagesFetched = 0;
         do {
           const res = await client.send(new GetLogEventsCommand({
             logGroupName,
             logStreamName,
             nextToken,
             limit: 100,
+            startFromHead: false,
           }));
-          if (res.events) events.push(...res.events);
+          if (res.events && res.events.length > 0) {
+            events.push(...res.events);
+          }
           nextToken = res.nextBackwardToken;
+          pagesFetched++;
+          if (events.length >= MAX_EVENTS_PER_FETCH) break;
+          if (pagesFetched > 10) break;
         } while (nextToken);
         events.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        Logger.info(TAG, `Fetched ${events.length} events from ${logStreamName}`, {
+          pages: pagesFetched,
+          total: events.length,
+        });
         return events;
       } catch (e: any) {
         Logger.error(TAG, 'GetLogEvents failed', { logGroupName, logStreamName, error: e.message, code: e.name });
@@ -123,8 +112,9 @@ export function useLogEvents(logGroupName: string | null, logStreamName: string 
       }
     },
     enabled: !!logGroupName && !!logStreamName,
-    staleTime: 15000,
-    refetchInterval: 5000,
+    staleTime: 10000,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(2000 * 2 ** attempt, 15000),
   });
 }
 
@@ -157,5 +147,6 @@ export function useFilterLogEvents(logGroupName: string | null, searchTerm: stri
     },
     enabled: !!logGroupName && !!searchTerm,
     staleTime: 15000,
+    retry: 2,
   });
 }

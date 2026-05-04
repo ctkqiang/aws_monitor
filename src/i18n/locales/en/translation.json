@@ -44,6 +44,20 @@
     "ecrRepos": { "title": "ECR Repositories", "noRepos": "No repositories found", "images": "Images", "noImages": "No images found" },
     "settings": { "title": "Settings", "region": "AWS Region", "regionHint": "Override the default region", "clearCache": "Clear Cache", "clearCacheSuccess": "Cache cleared", "signOut": "Sign Out", "signOutConfirm": "Are you sure you want to sign out?" }
   },
+  "about": {
+    "title": "About",
+    "openSource": "Open Source",
+    "author": "Author",
+    "email": "Email",
+    "wechat": "WeChat",
+    "version": "Version",
+    "sourceCode": "Source Code",
+    "tapToOpen": "Tap to open repository",
+    "appDesc": "AWS Cloud Monitoring & Management",
+    "currentTheme": "Current",
+    "debug": "Debug",
+    "debugLogs": "Developer Logs"
+  },
   "errors": {
     "missingPermission": "Missing permission: {{action}}. Contact your AWS admin.",
     "networkError": "Network error. Check your connection.",

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
@@ -6,6 +6,7 @@ import { useClusters, useServices, useRestartService } from '@/hooks/useECS';
 import { useTaskDefinition } from '@/hooks/useECSTaskDef';
 import { useUIStore } from '@/stores/uiStore';
 import { Logger } from '@/utils/logger';
+import { pushBackHandler, popBackHandler } from './MainTabs';
 
 export default function ECSServicesScreen() {
   const { t } = useTranslation();
@@ -16,6 +17,19 @@ export default function ECSServicesScreen() {
   const { data: services, isLoading: servicesLoading, isRefetching: servicesRefetch, error: servicesError, refetch: refetchServices } = useServices(selectedCluster);
   const restart = useRestartService();
   const [selectedTaskDef, setSelectedTaskDef] = React.useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedCluster) {
+      pushBackHandler(() => { setSelectedCluster(null); return true; });
+      return () => popBackHandler();
+    }
+  }, [selectedCluster]);
+
+  useEffect(() => {
+    if (selectedTaskDef) {
+      pushBackHandler(() => { setSelectedTaskDef(null); return true; });
+    }
+  }, [selectedTaskDef]);
 
   const handleRestart = (serviceName: string) => {
     if (!selectedCluster) return;

@@ -85,7 +85,7 @@ export default function SettingsScreen() {
       <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
         <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('auth.theme')}</Text>
         <Text style={[styles.hint, { color: theme.placeholder, marginBottom: 12 }]}>
-          Current: {resolvedMode === 'dark' ? 'Dark' : 'Light'}
+          {t('about.currentTheme')}: {resolvedMode === 'dark' ? 'Dark' : 'Light'}
         </Text>
         {THEME_OPTIONS.map((opt) => {
           const isSelected = themeMode === opt.mode;
@@ -116,9 +116,9 @@ export default function SettingsScreen() {
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
-        <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>Debug</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('about.debug')}</Text>
         <TouchableOpacity style={[styles.btnSecondary, { backgroundColor: theme.btnSecondary }]} onPress={() => setShowDebug(true)} activeOpacity={0.8}>
-          <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>Developer Logs</Text>
+          <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>{t('about.debugLogs')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -145,7 +145,7 @@ export default function SettingsScreen() {
       )}
 
       <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
-        <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>About</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('about.title')}</Text>
 
         <View style={[styles.aboutHeader, { borderBottomColor: theme.border }]}>
           <View style={[styles.aboutIconBox, { backgroundColor: theme.accent }]}>
@@ -156,7 +156,7 @@ export default function SettingsScreen() {
             <View style={styles.aboutBadgeRow}>
               <View style={[styles.openSourceBadge, { backgroundColor: resolvedMode === 'dark' ? '#1a3a1a' : '#e8f5e9' }]}>
                 <Ionicons name="git-branch" size={11} color="#27ae60" />
-                <Text style={styles.openSourceText}>Open Source</Text>
+                <Text style={styles.openSourceText}>{t('about.openSource')}</Text>
               </View>
               <View style={[styles.versionBadge, { backgroundColor: theme.btnSecondary }]}>
                 <Text style={[styles.versionBadgeText, { color: theme.textSecondary }]}>v1.0.0</Text>
@@ -170,21 +170,21 @@ export default function SettingsScreen() {
             <View style={styles.aboutRowIcon}>
               <Ionicons name="person" size={16} color={theme.textMuted} />
             </View>
-            <Text style={[styles.aboutLabel, { color: theme.textLabel }]}>Author</Text>
+            <Text style={[styles.aboutLabel, { color: theme.textLabel }]}>{t('about.author')}</Text>
             <Text style={[styles.aboutVal, { color: theme.text }]}>ctkqiang 钟智强</Text>
           </View>
           <View style={styles.aboutRow}>
             <View style={styles.aboutRowIcon}>
               <Ionicons name="mail" size={16} color={theme.textMuted} />
             </View>
-            <Text style={[styles.aboutLabel, { color: theme.textLabel }]}>Email</Text>
+            <Text style={[styles.aboutLabel, { color: theme.textLabel }]}>{t('about.email')}</Text>
             <Text style={[styles.aboutVal, { color: theme.text }]}>johnmelodymel@qq.com</Text>
           </View>
           <View style={styles.aboutRow}>
             <View style={styles.aboutRowIcon}>
               <Ionicons name="chatbubbles" size={16} color={theme.textMuted} />
             </View>
-            <Text style={[styles.aboutLabel, { color: theme.textLabel }]}>WeChat</Text>
+            <Text style={[styles.aboutLabel, { color: theme.textLabel }]}>{t('about.wechat')}</Text>
             <Text style={[styles.aboutVal, { color: theme.text }]}>ctkqiang</Text>
           </View>
         </View>
@@ -200,7 +200,7 @@ export default function SettingsScreen() {
               {REPO_URL}
             </Text>
             <Text style={[styles.repoHint, { color: theme.textMuted }]}>
-              Tap to open repository
+              {t('about.tapToOpen')}
             </Text>
           </View>
           <Ionicons name="open-outline" size={16} color={theme.textMuted} />
@@ -241,14 +241,14 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   aboutAppName: { fontSize: 20, fontWeight: '800', marginBottom: 6, letterSpacing: -0.5 },
-  aboutBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  aboutBadgeRow: { flexDirection: 'row', alignItems: 'center' },
   openSourceBadge: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
   },
   openSourceText: { fontSize: 10, fontWeight: '700', color: '#27ae60', marginLeft: 4 },
   versionBadge: {
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginLeft: 8,
   },
   versionBadgeText: { fontSize: 10, fontWeight: '700' },
   aboutBody: {},

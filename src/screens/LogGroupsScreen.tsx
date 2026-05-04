@@ -1,10 +1,59 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, ActivityIndicator, RefreshControl, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { useLogGroups } from '@/hooks/useCloudWatch';
 import { Logger } from '@/utils/logger';
+import RipplePressable from '@/components/RipplePressable';
+import { pushBackHandler, popBackHandler } from './MainTabs';
 import LogStreamsScreen from './LogStreamsScreen';
+
+function LogGroupCard({ item, onPress, theme, index }: { item: any; onPress: () => void; theme: any; index: number }) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1, duration: 300, delay: index * 50,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const formatBytes = (bytes?: number) => {
+    if (!bytes) return '';
+    if (bytes > 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  };
+
+  return (
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+      <RipplePressable onPress={onPress}>
+        <View style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+          <View style={[styles.rowAccent, { backgroundColor: theme.accent }]} />
+          <View style={styles.rowContent}>
+            <Text style={[styles.name, { color: theme.text }]} numberOfLines={2}>{item.logGroupName}</Text>
+            <View style={styles.rowMeta}>
+              {item.storedBytes ? (
+                <View style={[styles.chip, { backgroundColor: theme.bgInput }]}>
+                  <Text style={[styles.chipText, { color: theme.textSecondary }]}>{formatBytes(item.storedBytes)}</Text>
+                </View>
+              ) : null}
+              {item.retentionInDays ? (
+                <View style={[styles.chip, { backgroundColor: theme.bgInput, marginLeft: 6 }]}>
+                  <Text style={[styles.chipText, { color: theme.textSecondary }]}>{item.retentionInDays}d</Text>
+                </View>
+              ) : null}
+              {item.creationTime ? (
+                <Text style={[styles.tsText, { color: theme.textMuted }]}>
+                  Since {new Date(item.creationTime).toLocaleDateString()}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+          <Text style={[styles.chevron, { color: theme.textMuted }]}>›</Text>
+        </View>
+      </RipplePressable>
+    </Animated.View>
+  );
+}
 
 export default function LogGroupsScreen() {
   const { t } = useTranslation();
@@ -21,45 +70,14 @@ export default function LogGroupsScreen() {
     g.logGroupName?.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
-  const formatBytes = (bytes?: number) => {
-    if (!bytes) return '';
-    if (bytes > 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  const handleTap = (groupName: string) => {
+    Logger.info('CloudWatch', 'LogGroup tapped', {
+      group: groupName,
+      action: 'navigate → log streams',
+      timestamp: new Date().toISOString(),
+    });
+    setSelectedGroup(groupName);
   };
-
-  const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
-      onPress={() => {
-        Logger.info('UI', 'LogGroup tapped', { name: item.logGroupName });
-        setSelectedGroup(item.logGroupName);
-      }}
-      activeOpacity={0.6}
-    >
-      <View style={[styles.rowAccent, { backgroundColor: theme.accent }]} />
-      <View style={styles.rowContent}>
-        <Text style={[styles.name, { color: theme.text }]} numberOfLines={2}>{item.logGroupName}</Text>
-        <View style={styles.rowMeta}>
-          {item.storedBytes ? (
-            <View style={[styles.chip, { backgroundColor: theme.bgInput }]}>
-              <Text style={[styles.chipText, { color: theme.textSecondary }]}>{formatBytes(item.storedBytes)}</Text>
-            </View>
-          ) : null}
-          {item.retentionInDays ? (
-            <View style={[styles.chip, { backgroundColor: theme.bgInput }]}>
-              <Text style={[styles.chipText, { color: theme.textSecondary }]}>{item.retentionInDays}d</Text>
-            </View>
-          ) : null}
-          {item.creationTime ? (
-            <Text style={[styles.tsText, { color: theme.textMuted }]}>
-              Since {new Date(item.creationTime).toLocaleDateString()}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-      <Text style={[styles.chevron, { color: theme.textMuted }]}>›</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -75,15 +93,19 @@ export default function LogGroupsScreen() {
       ) : error ? (
         <View style={styles.centered}>
           <Text style={[styles.emptyText, { color: '#e74c3c' }]}>{(error as any)?.message || t('common.error')}</Text>
-          <TouchableOpacity onPress={() => refetch()} style={[styles.btn, { backgroundColor: theme.accent }]}>
-            <Text style={[styles.btnText, { color: theme.accentText }]}>{t('common.retry')}</Text>
-          </TouchableOpacity>
+          <RipplePressable onPress={() => refetch()}>
+            <View style={[styles.btn, { backgroundColor: theme.accent }]}>
+              <Text style={[styles.btnText, { color: theme.accentText }]}>{t('common.retry')}</Text>
+            </View>
+          </RipplePressable>
         </View>
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={(item: any) => item.logGroupName || item.arn || ''}
-          renderItem={renderItem}
+          renderItem={({ item, index }) => (
+            <LogGroupCard item={item} index={index} theme={theme} onPress={() => handleTap(item.logGroupName)} />
+          )}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl refreshing={isRefetching || false} onRefresh={refetch} tintColor={theme.accent} colors={[theme.accent]} />
@@ -113,9 +135,9 @@ const styles = StyleSheet.create({
   rowContent: { flex: 1, padding: 16, paddingLeft: 18 },
   name: { fontSize: 15, fontWeight: '600', marginBottom: 8, lineHeight: 20 },
   rowMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
-  chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginRight: 6 },
+  chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   chipText: { fontSize: 11, fontWeight: '600' },
-  tsText: { fontSize: 11 },
+  tsText: { fontSize: 11, marginLeft: 6 },
   chevron: { fontSize: 22, fontWeight: '300', marginRight: 12 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emptyText: { fontSize: 15, marginBottom: 12 },

@@ -44,6 +44,20 @@
     "ecrRepos": { "title": "ECR 仓库", "noRepos": "未找到仓库", "images": "镜像", "noImages": "未找到镜像" },
     "settings": { "title": "设置", "region": "AWS 区域", "regionHint": "覆盖默认区域", "clearCache": "清除缓存", "clearCacheSuccess": "缓存已清除", "signOut": "退出登录", "signOutConfirm": "确定要退出登录吗？" }
   },
+  "about": {
+    "title": "关于",
+    "openSource": "开源项目",
+    "author": "作者",
+    "email": "邮箱",
+    "wechat": "微信",
+    "version": "版本",
+    "sourceCode": "源代码",
+    "tapToOpen": "点击打开仓库",
+    "appDesc": "AWS 云端监控与管理",
+    "currentTheme": "当前",
+    "debug": "调试",
+    "debugLogs": "开发者日志"
+  },
   "errors": {
     "missingPermission": "缺少权限: {{action}}。联系 AWS 管理员。",
     "networkError": "网络错误，请检查连接。",

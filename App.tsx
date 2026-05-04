@@ -3,9 +3,10 @@ import 'react-native-url-polyfill/auto';
 import './src/i18n';
 
 import React, { useRef, useEffect } from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
+import {
+  View, Animated, StyleSheet, Platform, StatusBar as RNStatusBar,
+} from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
 import { ThemeProvider, useTheme, useResolvedThemeMode } from '@/theme/ThemeContext';
@@ -35,13 +36,20 @@ function AppContent() {
     outputRange: ['#0f0f1a', '#f2f2f7'],
   });
 
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor(theme.bg, true);
+      RNStatusBar.setBarStyle(theme.statusBar === 'light' ? 'light-content' : 'dark-content', true);
+    }
+  }, [theme.statusBar, theme.bg]);
+
   return (
-    <Animated.View style={[styles.root, { backgroundColor: animatedBg, paddingTop: insets.top }]}>
-      <StatusBar style={theme.statusBar} />
-      <View style={styles.body}>
+    <View style={styles.root}>
+      <Animated.View style={[styles.statusBarBg, { backgroundColor: animatedBg, height: insets.top }]} />
+      <Animated.View style={[styles.body, { backgroundColor: animatedBg }]}>
         {isSignedIn ? <MainTabs /> : <LoginScreen />}
-      </View>
-    </Animated.View>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -61,5 +69,6 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  statusBarBg: { width: '100%' },
   body: { flex: 1 },
 });
