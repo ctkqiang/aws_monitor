@@ -70,7 +70,7 @@ export default function MainTabs() {
   };
 
   const isActive = iamUser?.status === 'active';
-  const displayName = iamUser?.username || 'AWS User';
+  const displayName = iamUser?.username || t('common.awSuser');
   const totalGroups = logGroups?.length || 0;
   const totalStorageBytes = logGroups?.reduce((sum, g) => sum + (g.storedBytes || 0), 0) || 0;
   const totalStorage = totalStorageBytes > 1024 * 1024 * 1024
@@ -80,7 +80,6 @@ export default function MainTabs() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <View style={[styles.header, { backgroundColor: theme.bg }]}>
-        <View style={styles.headerBg} />
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={() => setShowCloudWatchModal(true)} activeOpacity={0.7} style={styles.avatarTouchable}>
             <View style={[styles.avatarRing, { borderColor: isActive ? '#27ae60' : theme.border }]}>
@@ -101,7 +100,7 @@ export default function MainTabs() {
                 style={styles.statusIcon}
               />
               <Text style={[styles.headerStatus, { color: isActive ? '#27ae60' : theme.danger }]}>
-                {isActive ? 'Active' : 'Inactive'}
+                {isActive ? t('common.active') : t('common.inactive')}
               </Text>
               {iamUser?.accountId && (
                 <View style={[styles.accountChip, { backgroundColor: theme.bgInput }]}>
@@ -163,7 +162,7 @@ export default function MainTabs() {
         <View style={[styles.modalOverlay]}>
           <View style={[styles.modalContent, { backgroundColor: theme.bgCard }]}>
             <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>CloudWatch Overview</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>{t('cloudwatch.overview')}</Text>
               <TouchableOpacity onPress={() => setShowCloudWatchModal(false)} activeOpacity={0.7}>
                 <Ionicons name="close-circle" size={28} color={theme.textMuted} />
               </TouchableOpacity>
@@ -173,21 +172,21 @@ export default function MainTabs() {
                 <Ionicons name="folder" size={22} color={theme.accent} style={styles.metricIcon} />
                 <View>
                   <Text style={[styles.metricValue, { color: theme.text }]}>{totalGroups}</Text>
-                  <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Log Groups</Text>
+                  <Text style={[styles.metricLabel, { color: theme.textMuted }]}>{t('cloudwatch.logGroups')}</Text>
                 </View>
               </View>
               <View style={[styles.metricCard, { backgroundColor: theme.bgInput }]}>
                 <Ionicons name="server" size={22} color={theme.accent} style={styles.metricIcon} />
                 <View>
                   <Text style={[styles.metricValue, { color: theme.text }]}>{totalStorage}</Text>
-                  <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Total Storage</Text>
+                  <Text style={[styles.metricLabel, { color: theme.textMuted }]}>{t('cloudwatch.totalStorage')}</Text>
                 </View>
               </View>
               <View style={[styles.metricCard, { backgroundColor: theme.bgInput }]}>
                 <Ionicons name="pulse" size={22} color="#27ae60" style={styles.metricIcon} />
                 <View>
-                  <Text style={[styles.metricValue, { color: '#27ae60' }]}>Active</Text>
-                  <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Status</Text>
+                  <Text style={[styles.metricValue, { color: '#27ae60' }]}>{t('common.active')}</Text>
+                  <Text style={[styles.metricLabel, { color: theme.textMuted }]}>{t('screens.ecsServices.status')}</Text>
                 </View>
               </View>
             </View>
@@ -199,7 +198,7 @@ export default function MainTabs() {
               }}
               activeOpacity={0.8}
             >
-              <Text style={[styles.modalBtnText, { color: theme.accentText }]}>Open CloudWatch Logs</Text>
+              <Text style={[styles.modalBtnText, { color: theme.accentText }]}>{t('cloudwatch.openLogs')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -210,11 +209,7 @@ export default function MainTabs() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { overflow: 'hidden' },
-  headerBg: {
-    position: 'absolute', top: -40, left: 0, right: 0,
-    height: 160, opacity: 0.06, backgroundColor: '#FF9900', borderRadius: 200,
-  },
+  header: { paddingVertical: 4 },
   headerContent: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 18, paddingVertical: 14,

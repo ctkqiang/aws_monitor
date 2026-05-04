@@ -7,6 +7,7 @@ import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 
 function RepoCard({ item, onPress, theme, index }: { item: any; onPress: () => void; theme: any; index: number }) {
+  const { t } = useTranslation();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -27,7 +28,7 @@ function RepoCard({ item, onPress, theme, index }: { item: any; onPress: () => v
             <Text style={[styles.name, { color: theme.text }]}>{item.repositoryName}</Text>
             <View style={styles.metaRow}>
               <Text style={[styles.meta, { color: theme.textMuted }]}>
-                {item.createdAt ? `Created ${new Date(item.createdAt).toLocaleDateString()}` : ''}
+                {item.createdAt ? `${t('ecrDetail.created')} ${new Date(item.createdAt).toLocaleDateString()}` : ''}
               </Text>
               {item.imageTagMutability && (
                 <View style={[styles.miniChip, { borderColor: theme.border }]}>
@@ -44,6 +45,7 @@ function RepoCard({ item, onPress, theme, index }: { item: any; onPress: () => v
 }
 
 function ImageCard({ item, theme, index }: { item: any; theme: any; index: number }) {
+  const { t } = useTranslation();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.92)).current;
 
@@ -66,7 +68,7 @@ function ImageCard({ item, theme, index }: { item: any; theme: any; index: numbe
         <View style={[styles.imgAccent, { backgroundColor: theme.accent }]} />
         <View style={styles.imgContent}>
           <Text style={[styles.tag, { color: theme.accent }]}>
-            {item.imageTags?.[0] || 'untagged'}
+            {item.imageTags?.[0] || t('ecrDetail.untagged')}
           </Text>
           <Text style={[styles.digest, { color: theme.textMuted }]} numberOfLines={1}>
             sha256:{item.imageDigest?.substring(7, 19)}...
@@ -74,14 +76,14 @@ function ImageCard({ item, theme, index }: { item: any; theme: any; index: numbe
           <View style={styles.imgStats}>
             <View style={styles.statCell}>
               <Text style={[styles.statVal, { color: theme.text }]}>{formatSize(item.imageSizeInBytes)}</Text>
-              <Text style={[styles.statLabel, { color: theme.textMuted }]}>Size</Text>
+              <Text style={[styles.statLabel, { color: theme.textMuted }]}>{t('ecrDetail.size')}</Text>
             </View>
             <View style={styles.statDiv} />
             <View style={styles.statCell}>
               <Text style={[styles.statVal, { color: theme.text }]}>
                 {item.imagePushedAt ? new Date(item.imagePushedAt).toLocaleDateString() : '—'}
               </Text>
-              <Text style={[styles.statLabel, { color: theme.textMuted }]}>Pushed</Text>
+              <Text style={[styles.statLabel, { color: theme.textMuted }]}>{t('ecrDetail.pushed')}</Text>
             </View>
           </View>
         </View>
