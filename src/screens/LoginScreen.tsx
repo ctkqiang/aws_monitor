@@ -51,36 +51,44 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Image source={require('@/../assets/applogo.png')} style={styles.logo} resizeMode="contain" />
+          <View style={[styles.logoContainer, { borderColor: theme.accent }]}>
+            <Image source={require('@/../assets/applogo.png')} style={styles.logo} resizeMode="contain" />
+          </View>
           <Text style={[styles.title, { color: theme.accent }]}>AWSight</Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{t('auth.signInPrompt')}</Text>
         </View>
 
-        <View style={styles.form}>
-          <Text style={[styles.label, { color: theme.textLabel }]}>{t('auth.region')}</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
-            value={region} onChangeText={setRegion}
-            placeholder="us-east-1" placeholderTextColor={theme.placeholder} autoCapitalize="none"
-          />
+        <View style={[styles.form, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.label, { color: theme.textLabel }]}>{t('auth.region')}</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
+              value={region} onChangeText={setRegion}
+              placeholder="us-east-1" placeholderTextColor={theme.placeholder} autoCapitalize="none"
+            />
+          </View>
 
-          <Text style={[styles.label, { color: theme.textLabel }]}>{t('auth.accessKeyId')}</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
-            value={accessKeyId} onChangeText={setAccessKeyId}
-            placeholder="AKIA..." placeholderTextColor={theme.placeholder} autoCapitalize="none"
-          />
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.label, { color: theme.textLabel }]}>{t('auth.accessKeyId')}</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
+              value={accessKeyId} onChangeText={setAccessKeyId}
+              placeholder="AKIA..." placeholderTextColor={theme.placeholder} autoCapitalize="none"
+            />
+          </View>
 
-          <Text style={[styles.label, { color: theme.textLabel }]}>{t('auth.secretAccessKey')}</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
-            value={secretAccessKey} onChangeText={setSecretAccessKey}
-            placeholder="••••••••••••••••" placeholderTextColor={theme.placeholder}
-            secureTextEntry autoCapitalize="none"
-          />
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.label, { color: theme.textLabel }]}>{t('auth.secretAccessKey')}</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
+              value={secretAccessKey} onChangeText={setSecretAccessKey}
+              placeholder="••••••••••••••••" placeholderTextColor={theme.placeholder}
+              secureTextEntry autoCapitalize="none"
+            />
+          </View>
 
           {isLoading ? (
-            <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 32 }} />
+            <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 28 }} />
           ) : (
             <TouchableOpacity
               style={[
@@ -103,15 +111,28 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { flexGrow: 1, padding: 24, justifyContent: 'center' },
-  header: { alignItems: 'center', marginBottom: 40 },
-  logo: { width: 80, height: 80, marginBottom: 16 },
-  title: { fontSize: 36, fontWeight: '700', marginBottom: 8 },
-  subtitle: { fontSize: 14 },
-  form: { width: '100%' },
-  label: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 16, textTransform: 'uppercase' },
-  input: { borderRadius: 8, padding: 14, fontSize: 15, borderWidth: 1 },
-  button: { marginTop: 32, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  buttonDisabled: { opacity: 0.4 },
-  buttonText: { fontSize: 16, fontWeight: '600' },
+  scroll: { flexGrow: 1, padding: 20, justifyContent: 'center' },
+  header: { alignItems: 'center', marginBottom: 32 },
+  logoContainer: {
+    width: 90, height: 90, borderRadius: 22, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+  },
+  logo: { width: 60, height: 60 },
+  title: { fontSize: 34, fontWeight: '800', marginBottom: 6, letterSpacing: -1 },
+  subtitle: { fontSize: 13, fontWeight: '500' },
+  form: {
+    width: '100%', borderRadius: 18, borderWidth: StyleSheet.hairlineWidth,
+    padding: 20, paddingTop: 10,
+  },
+  fieldGroup: { marginTop: 14 },
+  label: { fontSize: 11, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 },
+  input: {
+    borderRadius: 10, padding: 15, fontSize: 15, borderWidth: StyleSheet.hairlineWidth,
+  },
+  button: {
+    marginTop: 28, height: 54, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  buttonDisabled: { opacity: 0.35 },
+  buttonText: { fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
 });

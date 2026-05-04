@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { useLogStreams } from '@/hooks/useCloudWatch';
+import { Logger } from '@/utils/logger';
 import LogEventsScreen from './LogEventsScreen';
 
 interface Props { logGroupName: string; onBack: () => void; }
@@ -25,13 +26,26 @@ export default function LogStreamsScreen({ logGroupName, onBack }: Props) {
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
-      onPress={() => setSelectedStream(item.logStreamName)}
-      activeOpacity={0.7}
+      onPress={() => {
+        Logger.info('UI', 'LogStream tapped', { name: item.logStreamName });
+        setSelectedStream(item.logStreamName);
+      }}
+      activeOpacity={0.6}
     >
-      <Text style={[styles.name, { color: theme.text }]}>{item.logStreamName}</Text>
-      <Text style={[styles.meta, { color: theme.textMuted }]}>
-        {item.lastEventTimestamp ? formatTime(item.lastEventTimestamp) : t('common.noData')}
-      </Text>
+      <View style={[styles.rowAccent, { backgroundColor: theme.accent }]} />
+      <View style={styles.rowContent}>
+        <Text style={[styles.name, { color: theme.text }]} numberOfLines={2}>{item.logStreamName}</Text>
+        <View style={styles.metaRow}>
+          {item.lastEventTimestamp ? (
+            <View style={[styles.chip, { backgroundColor: theme.bgInput }]}>
+              <Text style={[styles.chipText, { color: theme.textSecondary }]}>{formatTime(item.lastEventTimestamp)}</Text>
+            </View>
+          ) : (
+            <Text style={[styles.meta, { color: theme.textMuted }]}>{t('common.noData')}</Text>
+          )}
+        </View>
+      </View>
+      <Text style={[styles.chevron, { color: theme.textMuted }]}>›</Text>
     </TouchableOpacity>
   );
 
@@ -39,7 +53,7 @@ export default function LogStreamsScreen({ logGroupName, onBack }: Props) {
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <TouchableOpacity onPress={onBack} activeOpacity={0.7}>
-          <Text style={[styles.backBtn, { color: theme.accent }]}>← {t('common.back')}</Text>
+          <Text style={[styles.backBtn, { color: theme.accent }]}>{t('common.back')}</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
           {logGroupName.split('/').pop()}
@@ -67,14 +81,24 @@ export default function LogStreamsScreen({ logGroupName, onBack }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderBottomWidth: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: StyleSheet.hairlineWidth },
   backBtn: { fontSize: 15, fontWeight: '600' },
   title: { fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' },
   loader: { marginTop: 100 },
   list: { padding: 12 },
-  row: { padding: 14, borderRadius: 10, borderWidth: 1, marginBottom: 8 },
-  name: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 14, borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 8, overflow: 'hidden',
+  },
+  rowAccent: { width: 4, height: '100%', position: 'absolute', left: 0, top: 0, bottom: 0 },
+  rowContent: { flex: 1, padding: 16, paddingLeft: 18 },
+  name: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  metaRow: { flexDirection: 'row', alignItems: 'center' },
   meta: { fontSize: 12 },
+  chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  chipText: { fontSize: 11, fontWeight: '600' },
+  chevron: { fontSize: 22, fontWeight: '300', marginRight: 12 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emptyText: { fontSize: 15 },
 });

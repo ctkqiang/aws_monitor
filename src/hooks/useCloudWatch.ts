@@ -35,6 +35,32 @@ export function useLogGroups() {
       }
     },
     staleTime: 30000,
+    refetchInterval: false as const,
+  });
+}
+
+export function useLogGroupsLive(intervalMs: number = 5000) {
+  return useQuery<LogGroup[]>({
+    queryKey: ['log-groups-live'],
+    queryFn: async () => {
+      try {
+        const client = createCloudWatchLogsClient();
+        const groups: LogGroup[] = [];
+        let nextToken: string | undefined;
+        do {
+          const res = await client.send(new DescribeLogGroupsCommand({ nextToken, limit: 50 }));
+          if (res.logGroups) groups.push(...res.logGroups);
+          nextToken = res.nextToken;
+        } while (nextToken);
+        return groups;
+      } catch (e: any) {
+        Logger.error(TAG, 'DescribeLogGroups failed', { error: e.message, code: e.name });
+        throw e;
+      }
+    },
+    staleTime: intervalMs,
+    refetchInterval: intervalMs,
+    enabled: true,
   });
 }
 

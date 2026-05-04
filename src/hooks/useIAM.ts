@@ -1,9 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  IAMClient,
-  GetUserCommand,
-  ListAccountAliasesCommand,
-} from '@aws-sdk/client-iam';
+import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { FetchHttpHandler } from '@smithy/fetch-http-handler';
 import { useAuthStore } from '@/stores/authStore';
 import { Logger } from '@/utils/logger';
@@ -13,13 +9,13 @@ const TAG = 'IAM';
 export function useCurrentUser() {
   const { credentials, region } = useAuthStore.getState();
 
-  return useQuery<{ username: string; arn: string; accountAlias: string | null; status: 'active' | 'inactive' }>({
+  return useQuery<{ username: string; arn: string; accountId: string; status: 'active' | 'inactive' }>({
     queryKey: ['iam-user'],
     queryFn: async () => {
       if (!credentials) throw new Error('Not authenticated');
 
-      const client = new IAMClient({
-        region: 'us-east-1',
+      const client = new STSClient({
+        region: region || 'us-east-1',
         credentials: {
           accessKeyId: credentials.accessKeyId,
           secretAccessKey: credentials.secretAccessKey,
@@ -29,31 +25,36 @@ export function useCurrentUser() {
 
       let username = 'Unknown';
       let arn = '';
+      let accountId = '';
       let status: 'active' | 'inactive' = 'inactive';
 
       try {
-        const userRes = await client.send(new GetUserCommand({}));
-        username = userRes.User?.UserName || 'Unknown';
-        arn = userRes.User?.Arn || '';
+        const idRes = await client.send(new GetCallerIdentityCommand({}));
+        arn = idRes.Arn || '';
+        accountId = idRes.Account || '';
+
+        const arnParts = arn.split(':');
+        const resourceInfo = arnParts[5] || '';
+        const slashParts = resourceInfo.split('/');
+
+        if (slashParts.length >= 2) {
+          username = slashParts[1];
+        } else if (arn.toLowerCase().startsWith('arn:aws:sts::') && slashParts[0] === 'assumed-role') {
+          username = slashParts[1] || 'Unknown';
+        } else if (arn.toLowerCase().includes(':user/')) {
+          username = arn.split('/').pop() || 'Unknown';
+        }
+
         status = 'active';
       } catch (e: any) {
-        Logger.warn(TAG, 'GetUser failed', { error: e.message });
-        const ak = credentials.accessKeyId.substring(0, 8);
-        username = `iam:${ak}***`;
+        Logger.warn(TAG, 'GetCallerIdentity failed', { error: e.message });
         status = 'active';
+        username = 'AWSUser';
       }
 
-      let accountAlias: string | null = null;
-      try {
-        const aliasRes = await client.send(new ListAccountAliasesCommand({}));
-        accountAlias = aliasRes.AccountAliases?.[0] || null;
-      } catch {
-        // optional
-      }
+      Logger.info(TAG, 'User resolved', { username, status, accountId });
 
-      Logger.info(TAG, 'IAM user resolved', { username, status });
-
-      return { username, arn, accountAlias, status };
+      return { username, arn, accountId, status };
     },
     enabled: !!credentials,
     staleTime: 60000,

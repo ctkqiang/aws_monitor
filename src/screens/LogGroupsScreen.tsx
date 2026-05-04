@@ -1,14 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { useLogGroups } from '@/hooks/useCloudWatch';
+import { Logger } from '@/utils/logger';
 import LogStreamsScreen from './LogStreamsScreen';
 
 export default function LogGroupsScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { data: groups, isLoading, error, refetch } = useLogGroups();
+  const { data: groups, isLoading, isRefetching, error, refetch } = useLogGroups();
   const [search, setSearch] = React.useState('');
   const [selectedGroup, setSelectedGroup] = React.useState<string | null>(null);
 
@@ -20,17 +21,43 @@ export default function LogGroupsScreen() {
     g.logGroupName?.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
+  const formatBytes = (bytes?: number) => {
+    if (!bytes) return '';
+    if (bytes > 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  };
+
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
-      onPress={() => setSelectedGroup(item.logGroupName)}
-      activeOpacity={0.7}
+      onPress={() => {
+        Logger.info('UI', 'LogGroup tapped', { name: item.logGroupName });
+        setSelectedGroup(item.logGroupName);
+      }}
+      activeOpacity={0.6}
     >
-      <Text style={[styles.name, { color: theme.text }]}>{item.logGroupName}</Text>
-      <Text style={[styles.meta, { color: theme.textMuted }]}>
-        {item.storedBytes ? `${(item.storedBytes / 1024 / 1024).toFixed(1)} MB` : ''}
-        {item.retentionInDays ? ` · ${item.retentionInDays}d retention` : ''}
-      </Text>
+      <View style={[styles.rowAccent, { backgroundColor: theme.accent }]} />
+      <View style={styles.rowContent}>
+        <Text style={[styles.name, { color: theme.text }]} numberOfLines={2}>{item.logGroupName}</Text>
+        <View style={styles.rowMeta}>
+          {item.storedBytes ? (
+            <View style={[styles.chip, { backgroundColor: theme.bgInput }]}>
+              <Text style={[styles.chipText, { color: theme.textSecondary }]}>{formatBytes(item.storedBytes)}</Text>
+            </View>
+          ) : null}
+          {item.retentionInDays ? (
+            <View style={[styles.chip, { backgroundColor: theme.bgInput }]}>
+              <Text style={[styles.chipText, { color: theme.textSecondary }]}>{item.retentionInDays}d</Text>
+            </View>
+          ) : null}
+          {item.creationTime ? (
+            <Text style={[styles.tsText, { color: theme.textMuted }]}>
+              Since {new Date(item.creationTime).toLocaleDateString()}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+      <Text style={[styles.chevron, { color: theme.textMuted }]}>›</Text>
     </TouchableOpacity>
   );
 
@@ -58,6 +85,9 @@ export default function LogGroupsScreen() {
           keyExtractor={(item: any) => item.logGroupName || item.arn || ''}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching || false} onRefresh={refetch} tintColor={theme.accent} colors={[theme.accent]} />
+          }
           ListEmptyComponent={
             <View style={styles.centered}>
               <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t('screens.logGroups.noGroups')}</Text>
@@ -71,12 +101,22 @@ export default function LogGroupsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  searchInput: { margin: 12, padding: 12, borderRadius: 8, fontSize: 15, borderWidth: 1 },
+  searchInput: { margin: 12, paddingHorizontal: 16, paddingVertical: 13, borderRadius: 12, fontSize: 15, borderWidth: StyleSheet.hairlineWidth },
   loader: { marginTop: 100 },
-  list: { paddingHorizontal: 12 },
-  row: { padding: 16, borderRadius: 10, borderWidth: 1, marginBottom: 8 },
-  name: { fontSize: 15, fontWeight: '600', marginBottom: 4 },
-  meta: { fontSize: 12 },
+  list: { paddingHorizontal: 12, paddingBottom: 8 },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 14, borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 8, overflow: 'hidden',
+  },
+  rowAccent: { width: 4, height: '100%', position: 'absolute', left: 0, top: 0, bottom: 0 },
+  rowContent: { flex: 1, padding: 16, paddingLeft: 18 },
+  name: { fontSize: 15, fontWeight: '600', marginBottom: 8, lineHeight: 20 },
+  rowMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
+  chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginRight: 6 },
+  chipText: { fontSize: 11, fontWeight: '600' },
+  tsText: { fontSize: 11 },
+  chevron: { fontSize: 22, fontWeight: '300', marginRight: 12 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emptyText: { fontSize: 15, marginBottom: 12 },
   btn: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },

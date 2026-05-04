@@ -105,7 +105,7 @@ export function useThemeMode(): ThemeMode {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme: ColorSchemeName = useColorScheme();
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     AsyncStorage.getItem(THEME_STORAGE_KEY).then((stored) => {
@@ -123,7 +123,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (currentMode === 'light') return 'light';
     if (currentMode === 'dark') return 'dark';
     return systemScheme === 'light' ? 'light' : 'dark';
-  }, [systemScheme]);
+  }, [systemScheme, tick]);
 
   const colors = useMemo(() => (mode === 'light' ? lightTheme : darkTheme), [mode]);
 
