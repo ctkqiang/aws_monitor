@@ -15,6 +15,8 @@ import { useFSxFileSystems } from '@/hooks/useFSx';
 import { useClusters } from '@/hooks/useECS';
 import { useRepositories } from '@/hooks/useECR';
 import { Logger } from '@/utils/logger';
+import ResourceDetailScreen, { ResourceType } from './ResourceDetailScreen';
+import RipplePressable from '@/components/RipplePressable';
 
 const TAG = 'Dashboard';
 
@@ -106,6 +108,19 @@ export default function DashboardScreen() {
   const lbActive = lb.data?.filter((l: any) => l.State?.Code === 'active').length || 0;
   const ontapSystems = fsx.data?.filter((f: any) => f.FileSystemType === 'ONTAP') || [];
   const ontapAvailable = ontapSystems.filter((f: any) => f.Lifecycle === 'AVAILABLE').length;
+
+  const [detailItem, setDetailItem] = React.useState<any>(null);
+  const [detailType, setDetailType] = React.useState<ResourceType>('rds');
+
+  if (detailItem) {
+    return (
+      <ResourceDetailScreen
+        resourceType={detailType}
+        item={detailItem}
+        onBack={() => setDetailItem(null)}
+      />
+    );
+  }
 
   const metrics: MetricCardData[] = [
     {
@@ -206,6 +221,7 @@ export default function DashboardScreen() {
                 isGood={item.DBInstanceStatus === 'available'}
                 theme={theme}
                 index={i}
+                onPress={() => { setDetailType('rds'); setDetailItem(item); }}
               />
             ))}
 
@@ -219,6 +235,7 @@ export default function DashboardScreen() {
                 isGood={item.CacheClusterStatus === 'available'}
                 theme={theme}
                 index={i}
+                onPress={() => { setDetailType('elasticache'); setDetailItem(item); }}
               />
             ))}
 
@@ -232,6 +249,21 @@ export default function DashboardScreen() {
                 isGood={item.State?.Code === 'active'}
                 theme={theme}
                 index={i}
+                onPress={() => { setDetailType('lb'); setDetailItem(item); }}
+              />
+            ))}
+
+            <SectionHeader title={t('dashboard.ontapStorage')} icon="folder" count={ontapSystems.length} theme={theme} />
+            {ontapSystems.slice(0, 3).map((item: any, i: number) => (
+              <MiniResourceRow
+                key={item.FileSystemId}
+                name={item.FileSystemId}
+                meta={`${item.StorageCapacity || 0} GiB | ${item.StorageType || ''}`}
+                status={item.Lifecycle}
+                isGood={item.Lifecycle === 'AVAILABLE'}
+                theme={theme}
+                index={i}
+                onPress={() => { setDetailType('ontap'); setDetailItem(item); }}
               />
             ))}
 
@@ -244,9 +276,9 @@ export default function DashboardScreen() {
 }
 
 function MiniResourceRow({
-  name, meta, status, isGood, theme, index,
+  name, meta, status, isGood, theme, index, onPress,
 }: {
-  name: string; meta: string; status?: string; isGood: boolean; theme: any; index: number;
+  name: string; meta: string; status?: string; isGood: boolean; theme: any; index: number; onPress?: () => void;
 }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(12)).current;
@@ -263,7 +295,7 @@ function MiniResourceRow({
     ]).start();
   }, []);
 
-  return (
+  const content = (
     <Animated.View style={[
       styles.miniRow,
       { backgroundColor: theme.bgCard, borderColor: theme.border },
@@ -283,8 +315,11 @@ function MiniResourceRow({
         </View>
         <Text style={[styles.miniMeta, { color: theme.textMuted }]} numberOfLines={1}>{meta}</Text>
       </View>
+      {onPress ? <Ionicons name="chevron-forward" size={16} color={theme.textMuted} style={{ marginRight: SPACING.sm }} /> : null}
     </Animated.View>
   );
+
+  return onPress ? <RipplePressable onPress={onPress}>{content}</RipplePressable> : content;
 }
 
 const styles = StyleSheet.create({

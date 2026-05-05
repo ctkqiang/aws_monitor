@@ -14,6 +14,7 @@ import { useSecurityGroups } from '@/hooks/useEC2';
 import { useFSxFileSystems } from '@/hooks/useFSx';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
+import ResourceDetailScreen, { ResourceType } from './ResourceDetailScreen';
 
 const TAG = 'Resources';
 
@@ -84,12 +85,24 @@ export default function ResourcesScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const [activeTab, setActiveTab] = React.useState<ResourceTab>('rds');
+  const [selectedItem, setSelectedItem] = React.useState<any>(null);
+  const [selectedType, setSelectedType] = React.useState<ResourceType>('rds');
 
   const rds = useRDSInstances();
   const elasticache = useElastiCacheClusters();
   const lb = useLoadBalancers();
   const sg = useSecurityGroups();
   const fsx = useFSxFileSystems();
+
+  if (selectedItem) {
+    return (
+      <ResourceDetailScreen
+        resourceType={selectedType}
+        item={selectedItem}
+        onBack={() => setSelectedItem(null)}
+      />
+    );
+  }
 
   const getQueryForTab = (tab: ResourceTab) => {
     switch (tab) {
@@ -112,6 +125,7 @@ export default function ResourcesScreen() {
       statusColor={item.DBInstanceStatus === 'available' ? theme.success : theme.danger}
       theme={theme}
       index={index}
+      onPress={() => { setSelectedType('rds'); setSelectedItem(item); }}
     />
   );
 
@@ -124,6 +138,7 @@ export default function ResourcesScreen() {
       statusColor={item.CacheClusterStatus === 'available' ? theme.success : theme.danger}
       theme={theme}
       index={index}
+      onPress={() => { setSelectedType('elasticache'); setSelectedItem(item); }}
     />
   );
 
@@ -136,6 +151,7 @@ export default function ResourcesScreen() {
       statusColor={item.State?.Code === 'active' ? theme.success : theme.danger}
       theme={theme}
       index={index}
+      onPress={() => { setSelectedType('lb'); setSelectedItem(item); }}
     />
   );
 
@@ -149,6 +165,7 @@ export default function ResourcesScreen() {
         meta={`In: ${inboundCount} rules | Out: ${outboundCount} rules`}
         theme={theme}
         index={index}
+        onPress={() => { setSelectedType('sg'); setSelectedItem(item); }}
       />
     );
   };
@@ -162,6 +179,7 @@ export default function ResourcesScreen() {
       statusColor={item.Lifecycle === 'AVAILABLE' ? theme.success : theme.danger}
       theme={theme}
       index={index}
+      onPress={() => { setSelectedType('ontap'); setSelectedItem(item); }}
     />
   );
 
