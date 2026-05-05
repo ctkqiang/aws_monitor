@@ -3,37 +3,54 @@ import {
   Pressable, Animated, View, StyleSheet,
   PressableProps, ViewStyle, StyleProp,
 } from 'react-native';
+import { SPACING, RADIUS } from '@/theme/ThemeContext';
 
 interface Props extends PressableProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   rippleColor?: string;
+  scale?: number;
 }
 
-export default function RipplePressable({ children, style, rippleColor = 'rgba(255,255,255,0.15)', ...props }: Props) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const opacity = useRef(new Animated.Value(1)).current;
+export default function RipplePressable({
+  children,
+  style,
+  rippleColor = 'rgba(255,255,255,0.12)',
+  scale: pressScale = 0.97,
+  ...props
+}: Props) {
+  const animScale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, friction: 8 }),
-    ]).start();
+    Animated.spring(animScale, {
+      toValue: pressScale,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 25,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5, tension: 100 }).start();
+    Animated.spring(animScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 200,
+      friction: 15,
+    }).start();
   };
 
   return (
-    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+    <Animated.View style={[{ transform: [{ scale: animScale }] }, style]}>
       <Pressable
         {...props}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        android_ripple={{ color: rippleColor, borderless: false }}
+        android_ripple={{ color: rippleColor, borderless: false, radius: SPACING.xxl * 4 }}
         style={({ pressed }) => [
-          pressed && { opacity: 0.9 },
+          pressed && { opacity: 0.88 },
         ]}
+        accessible
+        accessibilityRole="button"
       >
         {children}
       </Pressable>

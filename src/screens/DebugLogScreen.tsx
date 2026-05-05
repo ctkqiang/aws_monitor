@@ -1,96 +1,224 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
-import { Logger, LogEntry, LogLevel } from '@/utils/logger';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Logger, LogEntry, LogLevel, LogStats } from '@/utils/logger';
 import { useTheme } from '@/theme/ThemeContext';
+import { RADIUS, SPACING, TYPOGRAPHY } from '@/theme/ThemeContext';
 
 interface Props {
   onClose: () => void;
 }
 
-const LEVEL_COLORS: Record<string, string> = {
-  DEBUG: '#8888aa',
-  INFO: '#27ae60',
-  WARN: '#FF9900',
-  ERROR: '#e74c3c',
+const LEVEL_CONFIG: Record<string, { color: string; label: string }> = {
+  DEBUG: { color: '#8888cc', label: 'DEBUG' },
+  INFO: { color: '#27ae60', label: 'INFO' },
+  WARN: { color: '#FF9900', label: 'WARN' },
+  ERROR: { color: '#e74c3c', label: 'ERROR' },
 };
+
+const LOG_LEVELS: LogLevel[] = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
 
 export default function DebugLogScreen({ onClose }: Props) {
   const theme = useTheme();
   const [entries, setEntries] = React.useState<LogEntry[]>([]);
   const [filter, setFilter] = React.useState('');
   const [showLevel, setShowLevel] = React.useState<LogLevel>(LogLevel.INFO);
+  const [stats, setStats] = React.useState<LogStats | null>(null);
+  const [showStats, setShowStats] = React.useState(false);
 
   React.useEffect(() => {
-    const refresh = () => setEntries(Logger.getEntries());
+    const refresh = () => {
+      setEntries(Logger.getEntries());
+      setStats(Logger.getStats());
+    };
     refresh();
-    return Logger.subscribe(refresh);
+    const unsub = Logger.subscribe(refresh);
+    return unsub;
   }, []);
 
-  const filtered = entries.filter((e) => {
-    if (e.level < showLevel) return false;
-    if (filter && !e.message.toLowerCase().includes(filter.toLowerCase()) && !e.tag.toLowerCase().includes(filter.toLowerCase())) return false;
-    return true;
-  });
+  const filtered = React.useMemo(() => {
+    return entries.filter((e) => {
+      if (e.level < showLevel) return false;
+      if (filter && !e.message.toLowerCase().includes(filter.toLowerCase()) && !e.tag.toLowerCase().includes(filter.toLowerCase())) return false;
+      return true;
+    });
+  }, [entries, showLevel, filter]);
 
-  const renderItem = ({ item }: { item: LogEntry }) => (
-    <View style={[styles.row, { borderBottomColor: theme.border }]}>
-      <Text style={[styles.level, { color: LEVEL_COLORS[item.levelName] }]}>
-        [{item.levelName}]
-      </Text>
-      <Text style={[styles.tag, { color: theme.textMuted }]}>[{item.tag}]</Text>
-      <Text style={[styles.time, { color: theme.placeholder }]}>{item.timestamp.substring(11, 23)}</Text>
-      <Text style={[styles.msg, { color: theme.textSecondary }]} numberOfLines={3}>{item.message}</Text>
-    </View>
-  );
+  const currentLevelConfig = LOG_LEVELS.find((l) => l === showLevel) ?? LOG_LEVELS[1];
+  const levelLabel = showLevel === LogLevel.DEBUG ? 'ALL' : LEVEL_CONFIG[LogLevel[showLevel]]?.label + '+';
+
+  const renderItem = ({ item }: { item: LogEntry }) => {
+    const cfg = LEVEL_CONFIG[item.levelName] || LEVEL_CONFIG.INFO;
+    return (
+      <View style={[styles.row, { borderBottomColor: theme.border }]}>
+        <View style={styles.rowHeader}>
+          <View style={[styles.levelBadge, { backgroundColor: cfg.color + '1a' }]}>
+            <View style={[styles.levelDot, { backgroundColor: cfg.color }]} />
+            <Text style={[styles.levelBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+          </View>
+          <Text style={[styles.tag, { color: theme.accent }]}>{item.tag}</Text>
+          {item.durationMs !== undefined && (
+            <Text style={[styles.duration, { color: theme.textMuted }]}>{item.durationMs}ms</Text>
+          )}
+        </View>
+        <Text style={[styles.time, { color: theme.placeholder }]}>{item.timestamp.substring(11, 23)}</Text>
+        <Text style={[styles.msg, { color: theme.textSecondary }]} selectable numberOfLines={6}>{item.message}</Text>
+      </View>
+    );
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top']}>
       <View style={[styles.header, { backgroundColor: theme.bgCard, borderBottomColor: theme.border }]}>
-        <Text style={[styles.title, { color: theme.accent }]}>Debug Logs ({filtered.length})</Text>
-        <View style={styles.actions}>
-          <TouchableOpacity onPress={() => setShowLevel(showLevel === LogLevel.DEBUG ? LogLevel.ERROR : showLevel - 1)} activeOpacity={0.7}>
-            <Text style={[styles.actionBtn, { color: theme.textLabel }]}>
-              Level: {showLevel === LogLevel.DEBUG ? 'ALL' : showLevel === LogLevel.INFO ? 'INFO+' : showLevel === LogLevel.WARN ? 'WARN+' : 'ERROR'}
-            </Text>
+        <View style={styles.headerLeft}>
+          <Ionicons name="bug" size={18} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+          <Text style={[styles.title, { color: theme.text }]}>Debug Logs</Text>
+          <View style={[styles.countBadge, { backgroundColor: theme.accentLight }]}>
+            <Text style={[styles.countText, { color: theme.accent }]}>{filtered.length}</Text>
+          </View>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => setShowStats(!showStats)}
+            activeOpacity={0.7}
+            style={[styles.iconBtn, { backgroundColor: theme.btnSecondary }]}
+          >
+            <Ionicons name="stats-chart" size={16} color={theme.btnSecondaryText} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => Logger.clear()} activeOpacity={0.7}>
-            <Text style={[styles.actionBtn, { color: theme.danger }]}>Clear</Text>
+            <Ionicons name="trash-outline" size={18} color={theme.danger} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-            <Text style={[styles.actionBtn, { color: theme.textLabel }]}>Close</Text>
+          <TouchableOpacity onPress={onClose} activeOpacity={0.7} style={{ marginLeft: SPACING.md }}>
+            <Ionicons name="close-circle" size={22} color={theme.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
+
+      {showStats && stats && (
+        <View style={[styles.statsBar, { backgroundColor: theme.bgCard, borderBottomColor: theme.border }]}>
+          <View style={styles.statItem}>
+            <Text style={[styles.statVal, { color: theme.text }]}>{stats.total}</Text>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>Total</Text>
+          </View>
+          <View style={[styles.statSplit, { backgroundColor: theme.border }]} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statVal, { color: '#e74c3c' }]}>{stats.errors}</Text>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>Errors</Text>
+          </View>
+          <View style={[styles.statSplit, { backgroundColor: theme.border }]} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statVal, { color: '#FF9900' }]}>{stats.warnings}</Text>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>Warns</Text>
+          </View>
+        </View>
+      )}
+
+      <View style={[styles.filterRow, { borderBottomColor: theme.border }]}>
+        {LOG_LEVELS.map((lvl) => {
+          const name = LogLevel[lvl];
+          const cfg = LEVEL_CONFIG[name];
+          const isActive = lvl >= showLevel;
+          return (
+            <TouchableOpacity
+              key={lvl}
+              onPress={() => setShowLevel(lvl)}
+              activeOpacity={0.7}
+              style={[
+                styles.levelChip,
+                { borderColor: isActive ? cfg.color : theme.border },
+                isActive && { backgroundColor: cfg.color + '18' },
+              ]}
+            >
+              <Text style={[styles.levelChipText, { color: isActive ? cfg.color : theme.textMuted }]}>
+                {name === 'DEBUG' && lvl === showLevel ? 'ALL' : cfg.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       <TextInput
-        style={[styles.filter, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border }]}
-        placeholder="Filter logs..."
+        style={[styles.filterInput, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
+        placeholder="Filter by message or tag..."
         placeholderTextColor={theme.placeholder}
         value={filter}
         onChangeText={setFilter}
+        autoCorrect={false}
       />
+
       <FlatList
         data={filtered}
         keyExtractor={(_, i) => String(i)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={[styles.empty, { color: theme.textMuted }]}>No log entries</Text>}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons name="document-text-outline" size={40} color={theme.textMuted} />
+            <Text style={[styles.emptyText, { color: theme.textMuted }]}>No log entries</Text>
+          </View>
+        }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { padding: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  title: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  actions: { flexDirection: 'row', justifyContent: 'space-between' },
-  actionBtn: { fontSize: 12, fontWeight: '600' },
-  filter: { margin: 8, padding: 10, borderRadius: 8, fontSize: 13, borderWidth: StyleSheet.hairlineWidth },
-  list: { paddingHorizontal: 8 },
-  row: { paddingVertical: 7, borderBottomWidth: StyleSheet.hairlineWidth },
-  level: { fontSize: 10, fontWeight: '700' },
-  tag: { fontSize: 10 },
-  time: { fontSize: 10, marginBottom: 2 },
-  msg: { fontSize: 12, fontFamily: 'monospace' },
-  empty: { textAlign: 'center', marginTop: 60, fontSize: 14 },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  title: { ...TYPOGRAPHY.title },
+  countBadge: {
+    marginLeft: SPACING.sm, paddingHorizontal: SPACING.sm, paddingVertical: 2,
+    borderRadius: RADIUS.full, minWidth: 22, alignItems: 'center',
+  },
+  countText: { ...TYPOGRAPHY.monoSm, fontWeight: '700' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  iconBtn: {
+    width: 32, height: 32, borderRadius: RADIUS.full,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  statsBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around',
+    paddingVertical: SPACING.md, borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  statItem: { alignItems: 'center' },
+  statVal: { ...TYPOGRAPHY.h3, fontSize: 18 },
+  statLabel: { ...TYPOGRAPHY.caption, marginTop: 2 },
+  statSplit: { width: 1, height: 32 },
+  filterRow: {
+    flexDirection: 'row', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+    gap: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  levelChip: {
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs + 1,
+    borderRadius: RADIUS.full, borderWidth: 1,
+  },
+  levelChipText: { ...TYPOGRAPHY.caption, fontWeight: '700' },
+  filterInput: {
+    margin: SPACING.sm, marginHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md, fontSize: 14, borderWidth: StyleSheet.hairlineWidth,
+  },
+  list: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xxxl },
+  row: {
+    paddingVertical: SPACING.md, borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs },
+  levelBadge: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm,
+    paddingVertical: 2, borderRadius: RADIUS.xs,
+  },
+  levelDot: { width: 6, height: 6, borderRadius: 3, marginRight: 4 },
+  levelBadgeText: { ...TYPOGRAPHY.monoSm, fontWeight: '700' },
+  tag: { ...TYPOGRAPHY.monoSm, marginLeft: SPACING.sm, fontWeight: '600' },
+  duration: { ...TYPOGRAPHY.monoSm, marginLeft: 'auto' },
+  time: { ...TYPOGRAPHY.monoSm, marginBottom: SPACING.xs },
+  msg: { ...TYPOGRAPHY.mono },
+  empty: { alignItems: 'center', marginTop: 80 },
+  emptyText: { ...TYPOGRAPHY.body, marginTop: SPACING.md },
 });

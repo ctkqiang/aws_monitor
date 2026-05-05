@@ -11,8 +11,13 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.716.0",
+    "@aws-sdk/client-ec2": "^3.1042.0",
     "@aws-sdk/client-ecr": "^3.716.0",
     "@aws-sdk/client-ecs": "^3.716.0",
+    "@aws-sdk/client-elastic-load-balancing-v2": "^3.1042.0",
+    "@aws-sdk/client-elasticache": "^3.1042.0",
+    "@aws-sdk/client-fsx": "^3.1042.0",
+    "@aws-sdk/client-rds": "^3.1042.0",
     "@aws-sdk/client-sts": "^3.716.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@tanstack/react-query": "^5.62.0",

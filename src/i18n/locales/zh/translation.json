@@ -10,6 +10,7 @@
     "back": "返回",
     "search": "搜索",
     "noData": "暂无数据",
+    "noResults": "无匹配结果",
     "signIn": "登录",
     "signOut": "退出登录",
     "settings": "设置",
@@ -45,12 +46,35 @@
     "rateLimited": "请求过于频繁。请稍等。",
     "permissionDenied": "访问被拒绝。请检查 IAM 权限。"
   },
-  "tabs": { "logs": "CloudWatch", "ecs": "ECS", "ecr": "ECR" },
+  "tabs": {
+    "dashboard": "仪表盘",
+    "logs": "CloudWatch",
+    "ecs": "ECS",
+    "ecr": "ECR",
+    "resources": "资源"
+  },
+  "dashboard": {
+    "title": "AWS 资源概览",
+    "subtitle": "云端基础架构实时监控",
+    "rdsInstances": "RDS 实例",
+    "cacheClusters": "ElastiCache",
+    "loadBalancers": "负载均衡器",
+    "securityGroups": "安全组",
+    "ontapStorage": "ONTAP 存储",
+    "ecsClusters": "ECS 集群",
+    "ecrRepos": "ECR 仓库",
+    "available": "可用",
+    "noRDS": "未找到 RDS 实例",
+    "noCache": "未找到 ElastiCache 集群",
+    "noLB": "未找到负载均衡器",
+    "noSG": "未找到安全组",
+    "noONTAP": "未找到 ONTAP 存储系统"
+  },
   "screens": {
     "logGroups": { "title": "日志组", "searchPlaceholder": "搜索日志组...", "noGroups": "未找到日志组" },
     "logStreams": { "title": "日志流", "noStreams": "未找到日志流" },
     "logEvents": { "title": "日志事件", "noEvents": "未找到日志事件", "searchPlaceholder": "过滤事件..." },
-    "ecsServices": { "title": "ECS 服务", "selectCluster": "选择集群", "noClusters": "未找到集群", "noServices": "未找到服务", "restartConfirm": "重启服务 {{name}}？", "restartSuccess": "重启已触发", "restartFailed": "重启失败", "running": "运行中", "desired": "期望数", "status": "状态" },
+    "ecsServices": { "title": "ECS 服务", "selectCluster": "选择集群", "noClusters": "未找到集群", "noServices": "未找到服务", "restartConfirm": "重启服务 {{name}}？", "restartSuccess": "重启已触发", "restartDeploymentId": "新部署 ID", "restartRefreshHint": "下拉刷新查看服务列表", "restartFailed": "重启失败", "running": "运行中", "desired": "期望数", "status": "状态" },
     "ecrRepos": { "title": "ECR 仓库", "noRepos": "未找到仓库", "images": "镜像", "noImages": "未找到镜像" },
     "settings": { "title": "设置", "region": "AWS 区域", "regionHint": "覆盖默认区域", "clearCache": "清除缓存", "clearCacheSuccess": "缓存已清除", "signOut": "退出登录", "signOutConfirm": "确定要退出登录吗？" }
   },
@@ -114,7 +138,8 @@
     "created": "创建于",
     "untagged": "无标签",
     "size": "大小",
-    "pushed": "推送"
+    "pushed": "推送",
+    "tags": "标签数"
   },
   "debug": {
     "title": "调试日志",

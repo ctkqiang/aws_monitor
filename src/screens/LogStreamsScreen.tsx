@@ -1,19 +1,34 @@
 import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet, Animated } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
+import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useLogStreams } from '@/hooks/useCloudWatch';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 import { pushBackHandler, popBackHandler } from './MainTabs';
 import LogEventsScreen from './LogEventsScreen';
 
+const TAG = 'LogStreams';
+
 interface Props { logGroupName: string; onBack: () => void; }
 
 function StreamCard({ item, onPress, theme, index }: { item: any; onPress: () => void; theme: any; index: number }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(16)).current;
+
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 300, delay: index * 40, useNativeDriver: true }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1, duration: 300, delay: Math.min(index * 45, 500),
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0, delay: Math.min(index * 45, 500),
+        tension: 120, friction: 14, useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const formatTime = (ts?: number) => {
@@ -21,24 +36,30 @@ function StreamCard({ item, onPress, theme, index }: { item: any; onPress: () =>
     return new Date(ts).toLocaleString();
   };
 
+  const hasData = !!item.lastEventTimestamp;
+
   return (
-    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }}>
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <RipplePressable onPress={onPress}>
-        <View style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
-          <View style={[styles.rowAccent, { backgroundColor: theme.accent }]} />
+        <View style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }, SHADOWS.sm]}>
+          <View style={[styles.rowAccent, { backgroundColor: hasData ? theme.accent : theme.border }]} />
           <View style={styles.rowContent}>
-            <Text style={[styles.name, { color: theme.text }]} numberOfLines={2}>{item.logStreamName}</Text>
+            <View style={styles.rowHeader}>
+              <Ionicons name="list-outline" size={14} color={hasData ? theme.accent : theme.textMuted} style={{ marginRight: SPACING.sm }} />
+              <Text style={[styles.name, { color: theme.text }]} numberOfLines={2}>{item.logStreamName}</Text>
+            </View>
             <View style={styles.metaRow}>
               {item.lastEventTimestamp ? (
                 <View style={[styles.chip, { backgroundColor: theme.bgInput }]}>
+                  <Ionicons name="time-outline" size={10} color={theme.textMuted} style={{ marginRight: 4 }} />
                   <Text style={[styles.chipText, { color: theme.textSecondary }]}>{formatTime(item.lastEventTimestamp)}</Text>
                 </View>
               ) : (
-                <Text style={[styles.noData, { color: theme.textMuted }]}>No data</Text>
+                <Text style={[styles.noData, { color: theme.textMuted }]}>No events</Text>
               )}
             </View>
           </View>
-          <Text style={[styles.chevron, { color: theme.textMuted }]}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} style={{ marginRight: SPACING.md }} />
         </View>
       </RipplePressable>
     </Animated.View>
@@ -63,38 +84,52 @@ export default function LogStreamsScreen({ logGroupName, onBack }: Props) {
   }
 
   const handleTap = (streamName: string) => {
-    Logger.info('CloudWatch', 'LogStream tapped', {
+    Logger.info(TAG, 'LogStream tapped', {
       group: logGroupName,
       stream: streamName,
       action: 'navigate → log events',
-      timestamp: new Date().toISOString(),
     });
     setSelectedStream(streamName);
   };
+
+  const shortGroupName = logGroupName.split('/').pop() || logGroupName;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <RipplePressable onPress={onBack}>
-          <Text style={[styles.backBtn, { color: theme.accent }]}>{t('common.back')}</Text>
+          <View style={styles.backRow}>
+            <Ionicons name="chevron-back" size={20} color={theme.accent} />
+            <Text style={[styles.backBtn, { color: theme.accent }]}>{t('common.back')}</Text>
+          </View>
         </RipplePressable>
-        <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
-          {logGroupName.split('/').pop()}
-        </Text>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
+            {shortGroupName}
+          </Text>
+          <Text style={[styles.subtitleText, { color: theme.textMuted }]}>
+            {streams?.length || 0} streams
+          </Text>
+        </View>
         <View style={{ width: 60 }} />
       </View>
       {isLoading ? (
-        <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
+        </View>
       ) : (
         <FlatList
           data={streams || []}
-          keyExtractor={(item: any) => item.logStreamName}
+          keyExtractor={(item: any) => item.logStreamName || item.arn || ''}
           renderItem={({ item, index }) => (
-            <StreamCard item={item} index={index} theme={theme} onPress={() => handleTap(item.logStreamName)} />
+            <StreamCard item={item} index={index} theme={theme} onPress={() => handleTap(item.logStreamName!)} />
           )}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.centered}>
+              <Ionicons name="document-outline" size={48} color={theme.textMuted} />
               <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t('screens.logStreams.noStreams')}</Text>
             </View>
           }
@@ -106,24 +141,32 @@ export default function LogStreamsScreen({ logGroupName, onBack }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  backBtn: { fontSize: 15, fontWeight: '600' },
-  title: { fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: SPACING.md, borderBottomWidth: StyleSheet.hairlineWidth },
+  backRow: { flexDirection: 'row', alignItems: 'center' },
+  backBtn: { ...TYPOGRAPHY.bodyBold },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  title: { ...TYPOGRAPHY.title },
+  subtitleText: { ...TYPOGRAPHY.caption, marginTop: 2 },
   loader: { marginTop: 100 },
-  list: { padding: 12 },
+  list: { padding: SPACING.md, paddingBottom: SPACING.xxl },
   row: {
     flexDirection: 'row', alignItems: 'center',
-    borderRadius: 14, borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 8, overflow: 'hidden',
+    borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: SPACING.sm, overflow: 'hidden',
   },
-  rowAccent: { width: 4, height: '100%', position: 'absolute', left: 0, top: 0, bottom: 0 },
-  rowContent: { flex: 1, padding: 16, paddingLeft: 18 },
-  name: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  rowAccent: { width: 4, alignSelf: 'stretch' },
+  rowContent: { flex: 1, padding: SPACING.lg, paddingLeft: SPACING.md },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm },
+  name: { ...TYPOGRAPHY.bodyBold, flex: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center' },
-  noData: { fontSize: 12 },
-  chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  chipText: { fontSize: 11, fontWeight: '600' },
-  chevron: { fontSize: 22, fontWeight: '300', marginRight: 12 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  emptyText: { fontSize: 15 },
+  noData: { ...TYPOGRAPHY.caption },
+  chip: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.sm,
+  },
+  chipText: { ...TYPOGRAPHY.monoSm },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xxxl },
+  emptyText: { ...TYPOGRAPHY.body, marginTop: SPACING.md },
+  loadingText: { ...TYPOGRAPHY.caption, marginTop: SPACING.md },
 });

@@ -1,43 +1,56 @@
 import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, Animated, RefreshControl } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, Animated } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
+import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useRepositories, useImages } from '@/hooks/useECR';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 
+const TAG = 'ECR';
+
 function RepoCard({ item, onPress, theme, index }: { item: any; onPress: () => void; theme: any; index: number }) {
   const { t } = useTranslation();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(16)).current;
+
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1, duration: 350, delay: index * 60,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1, duration: 320, delay: Math.min(index * 60, 500),
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0, delay: Math.min(index * 60, 500),
+        tension: 120, friction: 14, useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   return (
-    <Animated.View style={{
-      opacity: fadeAnim,
-      transform: [{ translateX: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [-30, 0] }) }],
-    }}>
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <RipplePressable onPress={onPress}>
-        <View style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+        <View style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }, SHADOWS.sm]}>
           <View style={[styles.rowAccent, { backgroundColor: theme.accent }]} />
           <View style={styles.rowContent}>
-            <Text style={[styles.name, { color: theme.text }]}>{item.repositoryName}</Text>
+            <View style={styles.rowHeader}>
+              <Ionicons name="cube-outline" size={14} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+              <Text style={[styles.name, { color: theme.text }]}>{item.repositoryName}</Text>
+            </View>
             <View style={styles.metaRow}>
               <Text style={[styles.meta, { color: theme.textMuted }]}>
-                {item.createdAt ? `${t('ecrDetail.created')} ${new Date(item.createdAt).toLocaleDateString()}` : ''}
+                {item.createdAt ? `${new Date(item.createdAt).toLocaleDateString()}` : ''}
               </Text>
               {item.imageTagMutability && (
-                <View style={[styles.miniChip, { borderColor: theme.border }]}>
+                <View style={[styles.miniChip, { backgroundColor: theme.bgInput }]}>
+                  <Ionicons name={item.imageTagMutability === 'IMMUTABLE' ? 'lock-closed' : 'lock-open'} size={10} color={theme.textMuted} style={{ marginRight: 3 }} />
                   <Text style={[styles.miniChipText, { color: theme.textSecondary }]}>{item.imageTagMutability}</Text>
                 </View>
               )}
             </View>
           </View>
-          <Text style={[styles.chevron, { color: theme.textMuted }]}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} style={{ marginRight: SPACING.md }} />
         </View>
       </RipplePressable>
     </Animated.View>
@@ -47,30 +60,41 @@ function RepoCard({ item, onPress, theme, index }: { item: any; onPress: () => v
 function ImageCard({ item, theme, index }: { item: any; theme: any; index: number }) {
   const { t } = useTranslation();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.92)).current;
+  const scaleAnim = useRef(new Animated.Value(0.94)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 350, delay: index * 50, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, delay: index * 50, friction: 7, useNativeDriver: true }),
+      Animated.timing(fadeAnim, {
+        toValue: 1, duration: 320, delay: Math.min(index * 55, 500),
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1, delay: Math.min(index * 55, 500),
+        tension: 140, friction: 12, useNativeDriver: true,
+      }),
     ]).start();
   }, []);
 
   const formatSize = (bytes?: number) => {
-    if (!bytes) return '—';
+    if (!bytes) return '\u2014';
     if (bytes > 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     return `${(bytes / 1024).toFixed(1)} KB`;
   };
 
+  const tagName = item.imageTags?.[0];
+
   return (
     <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-      <View style={[styles.imgCard, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+      <View style={[styles.imgCard, { backgroundColor: theme.bgCard, borderColor: theme.border }, SHADOWS.md]}>
         <View style={[styles.imgAccent, { backgroundColor: theme.accent }]} />
         <View style={styles.imgContent}>
-          <Text style={[styles.tag, { color: theme.accent }]}>
-            {item.imageTags?.[0] || t('ecrDetail.untagged')}
-          </Text>
-          <Text style={[styles.digest, { color: theme.textMuted }]} numberOfLines={1}>
+          <View style={styles.tagRow}>
+            <Ionicons name="pricetag" size={14} color={theme.accent} style={{ marginRight: SPACING.xs }} />
+            <Text style={[styles.tag, { color: theme.accent }]} numberOfLines={1}>
+              {tagName || t('ecrDetail.untagged')}
+            </Text>
+          </View>
+          <Text style={[styles.digest, { color: theme.textMuted }]} numberOfLines={1} selectable>
             sha256:{item.imageDigest?.substring(7, 19)}...
           </Text>
           <View style={styles.imgStats}>
@@ -78,74 +102,24 @@ function ImageCard({ item, theme, index }: { item: any; theme: any; index: numbe
               <Text style={[styles.statVal, { color: theme.text }]}>{formatSize(item.imageSizeInBytes)}</Text>
               <Text style={[styles.statLabel, { color: theme.textMuted }]}>{t('ecrDetail.size')}</Text>
             </View>
-            <View style={styles.statDiv} />
+            <View style={[styles.statDiv, { backgroundColor: theme.border }]} />
             <View style={styles.statCell}>
               <Text style={[styles.statVal, { color: theme.text }]}>
-                {item.imagePushedAt ? new Date(item.imagePushedAt).toLocaleDateString() : '—'}
+                {item.imagePushedAt ? new Date(item.imagePushedAt).toLocaleDateString() : '\u2014'}
               </Text>
               <Text style={[styles.statLabel, { color: theme.textMuted }]}>{t('ecrDetail.pushed')}</Text>
+            </View>
+            <View style={[styles.statDiv, { backgroundColor: theme.border }]} />
+            <View style={styles.statCell}>
+              <Text style={[styles.statVal, { color: theme.text }]}>
+                {item.imageTags?.length ?? 0}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.textMuted }]}>{t('ecrDetail.tags')}</Text>
             </View>
           </View>
         </View>
       </View>
     </Animated.View>
-  );
-}
-
-export default function ECRReposScreen() {
-  const { t } = useTranslation();
-  const theme = useTheme();
-  const { data: repos, isLoading, isRefetching, error, refetch } = useRepositories();
-  const [selectedRepo, setSelectedRepo] = React.useState<string | null>(null);
-  const [lastTapTime, setLastTapTime] = React.useState(0);
-
-  if (selectedRepo) {
-    return <ECRImageDetail repoName={selectedRepo} onBack={() => setSelectedRepo(null)} />;
-  }
-
-  const handleTap = (repoName: string) => {
-    const now = Date.now();
-    Logger.info('ECR', 'Repository tapped', {
-      repo: repoName,
-      timeSinceLastTap: now - lastTapTime,
-      timestamp: new Date().toISOString(),
-    });
-    setLastTapTime(now);
-    setSelectedRepo(repoName);
-  };
-
-  return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {isLoading ? (
-        <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
-      ) : error ? (
-        <View style={styles.centered}>
-          <Text style={[styles.emptyText, { color: '#e74c3c' }]}>{(error as any)?.message || t('common.error')}</Text>
-          <RipplePressable onPress={() => refetch()}>
-            <View style={[styles.retryBtn, { backgroundColor: theme.accent }]}>
-              <Text style={[styles.retryText, { color: theme.accentText }]}>{t('common.retry')}</Text>
-            </View>
-          </RipplePressable>
-        </View>
-      ) : (
-        <FlatList
-          data={repos || []}
-          keyExtractor={(item: any) => item.repositoryArn}
-          renderItem={({ item, index }: { item: any; index: number }) => (
-            <RepoCard item={item} index={index} theme={theme} onPress={() => handleTap(item.repositoryName)} />
-          )}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching || false} onRefresh={refetch} tintColor={theme.accent} colors={[theme.accent]} />
-          }
-          ListEmptyComponent={
-            <View style={styles.centered}>
-              <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t('screens.ecrRepos.noRepos')}</Text>
-            </View>
-          }
-        />
-      )}
-    </View>
   );
 }
 
@@ -158,13 +132,27 @@ function ECRImageDetail({ repoName, onBack }: { repoName: string; onBack: () => 
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <RipplePressable onPress={onBack}>
-          <Text style={[styles.backBtn, { color: theme.accent }]}>{t('common.back')}</Text>
+          <View style={styles.backRow}>
+            <Ionicons name="chevron-back" size={20} color={theme.accent} />
+            <Text style={[styles.backBtn, { color: theme.accent }]}>{t('common.back')}</Text>
+          </View>
         </RipplePressable>
-        <Text style={[styles.imgTitle, { color: theme.text }]} numberOfLines={1}>{repoName}</Text>
+        <View style={styles.headerCenter}>
+          <View style={styles.headerTitleRow}>
+            <Ionicons name="cube" size={16} color={theme.accent} style={{ marginRight: SPACING.xs }} />
+            <Text style={[styles.imgTitle, { color: theme.text }]} numberOfLines={1}>{repoName}</Text>
+          </View>
+          <Text style={[styles.subtitleText, { color: theme.textMuted }]}>
+            {images?.length || 0} images
+          </Text>
+        </View>
         <View style={{ width: 60 }} />
       </View>
       {isLoading ? (
-        <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
+        </View>
       ) : (
         <FlatList
           data={images || []}
@@ -173,12 +161,71 @@ function ECRImageDetail({ repoName, onBack }: { repoName: string; onBack: () => 
             <ImageCard item={item} index={index} theme={theme} />
           )}
           contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching || false} onRefresh={refetch} tintColor={theme.accent} colors={[theme.accent]} />
-          }
+          showsVerticalScrollIndicator={false}
+          refreshing={isRefetching || false}
+          onRefresh={refetch}
           ListEmptyComponent={
             <View style={styles.centered}>
+              <Ionicons name="images-outline" size={48} color={theme.textMuted} />
               <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t('screens.ecrRepos.noImages')}</Text>
+            </View>
+          }
+        />
+      )}
+    </View>
+  );
+}
+
+export default function ECRReposScreen() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { data: repos, isLoading, isRefetching, error, refetch } = useRepositories();
+  const [selectedRepo, setSelectedRepo] = React.useState<string | null>(null);
+
+  if (selectedRepo) {
+    return <ECRImageDetail repoName={selectedRepo} onBack={() => setSelectedRepo(null)} />;
+  }
+
+  const handleTap = (repoName: string) => {
+    Logger.info(TAG, 'Repository tapped', {
+      repo: repoName,
+    });
+    setSelectedRepo(repoName);
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      {isLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <Ionicons name="cloud-offline-outline" size={48} color={theme.danger} />
+          <Text style={[styles.errorText, { color: theme.danger }]}>{(error as any)?.message || t('common.error')}</Text>
+          <RipplePressable onPress={() => refetch()}>
+            <View style={[styles.retryBtn, { backgroundColor: theme.accent }]}>
+              <Ionicons name="refresh" size={16} color={theme.accentText} style={{ marginRight: SPACING.sm }} />
+              <Text style={[styles.retryText, { color: theme.accentText }]}>{t('common.retry')}</Text>
+            </View>
+          </RipplePressable>
+        </View>
+      ) : (
+        <FlatList
+          data={repos || []}
+          keyExtractor={(item: any) => item.repositoryArn}
+          renderItem={({ item, index }: { item: any; index: number }) => (
+            <RepoCard item={item} index={index} theme={theme} onPress={() => handleTap(item.repositoryName)} />
+          )}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshing={isRefetching || false}
+          onRefresh={refetch}
+          ListEmptyComponent={
+            <View style={styles.centered}>
+              <Ionicons name="cube-outline" size={48} color={theme.textMuted} />
+              <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t('screens.ecrRepos.noRepos')}</Text>
             </View>
           }
         />
@@ -189,39 +236,57 @@ function ECRImageDetail({ repoName, onBack }: { repoName: string; onBack: () => 
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  backBtn: { fontSize: 15, fontWeight: '600' },
-  imgTitle: { fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: SPACING.md, borderBottomWidth: StyleSheet.hairlineWidth },
+  backRow: { flexDirection: 'row', alignItems: 'center' },
+  backBtn: { ...TYPOGRAPHY.bodyBold },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
+  imgTitle: { ...TYPOGRAPHY.title },
+  subtitleText: { ...TYPOGRAPHY.caption, marginTop: 2 },
   loader: { marginTop: 100 },
-  list: { padding: 12 },
+  list: { padding: SPACING.md, paddingBottom: SPACING.xxl },
   row: {
     flexDirection: 'row', alignItems: 'center',
-    borderRadius: 14, borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 8, overflow: 'hidden',
+    borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: SPACING.sm, overflow: 'hidden',
   },
-  rowAccent: { width: 4, height: '100%', position: 'absolute', left: 0, top: 0, bottom: 0 },
-  rowContent: { flex: 1, padding: 16, paddingLeft: 18 },
-  name: { fontSize: 15, fontWeight: '600', marginBottom: 6 },
-  metaRow: { flexDirection: 'row', alignItems: 'center' },
-  meta: { fontSize: 12, marginRight: 8 },
-  miniChip: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth },
-  miniChipText: { fontSize: 10, fontWeight: '600' },
-  chevron: { fontSize: 22, fontWeight: '300', marginRight: 12 },
+  rowAccent: { width: 4, alignSelf: 'stretch' },
+  rowContent: { flex: 1, padding: SPACING.lg, paddingLeft: SPACING.md },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm },
+  name: { ...TYPOGRAPHY.bodyBold, flex: 1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: SPACING.sm },
+  meta: { ...TYPOGRAPHY.caption },
+  miniChip: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.xs,
+  },
+  miniChipText: { ...TYPOGRAPHY.monoSm },
   imgCard: {
-    borderRadius: 14, borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 8, overflow: 'hidden',
+    borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: SPACING.sm, overflow: 'hidden',
   },
   imgAccent: { height: 3 },
-  imgContent: { padding: 16 },
-  tag: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
-  digest: { fontSize: 11, fontFamily: 'monospace', marginBottom: 12 },
+  imgContent: { padding: SPACING.lg },
+  tagRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xs },
+  tag: { ...TYPOGRAPHY.bodyBold },
+  digest: { ...TYPOGRAPHY.monoSm, marginBottom: SPACING.md },
   imgStats: { flexDirection: 'row', alignItems: 'center' },
   statCell: { flex: 1, alignItems: 'center' },
-  statDiv: { width: 1, height: 28, backgroundColor: 'rgba(128,128,160,0.15)' },
-  statLabel: { fontSize: 10, marginTop: 2 },
-  statVal: { fontSize: 15, fontWeight: '700' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  emptyText: { fontSize: 15, marginBottom: 12 },
-  retryBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, marginTop: 4 },
-  retryText: { fontSize: 14, fontWeight: '700' },
+  statDiv: { width: 1, height: 32 },
+  statLabel: { ...TYPOGRAPHY.caption, marginTop: SPACING.xs },
+  statVal: { ...TYPOGRAPHY.h3, fontSize: 16 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xxxl },
+  emptyText: { ...TYPOGRAPHY.body, marginTop: SPACING.md },
+  loadingText: { ...TYPOGRAPHY.caption, marginTop: SPACING.md },
+  errorText: { ...TYPOGRAPHY.body, textAlign: 'center', marginVertical: SPACING.md },
+  retryBtn: {
+    marginTop: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.lg,
+  },
+  retryText: { ...TYPOGRAPHY.bodyBold },
 });

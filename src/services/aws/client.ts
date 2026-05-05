@@ -1,6 +1,11 @@
 import { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs';
 import { ECSClient } from '@aws-sdk/client-ecs';
 import { ECRClient } from '@aws-sdk/client-ecr';
+import { RDSClient } from '@aws-sdk/client-rds';
+import { ElastiCacheClient } from '@aws-sdk/client-elasticache';
+import { ElasticLoadBalancingV2Client } from '@aws-sdk/client-elastic-load-balancing-v2';
+import { EC2Client } from '@aws-sdk/client-ec2';
+import { FSxClient } from '@aws-sdk/client-fsx';
 import { FetchHttpHandler } from '@smithy/fetch-http-handler';
 import { useAuthStore } from '@/stores/authStore';
 import { checkCredentialExpiry } from '@/services/auth/auth';
@@ -21,21 +26,15 @@ function createAwsConfig(region?: string) {
     throw new Error('Not authenticated. Please sign in first.');
   }
 
-  const creds: Record<string, string> = {
+  const creds = {
     accessKeyId: credentials.accessKeyId,
     secretAccessKey: credentials.secretAccessKey,
+    ...(credentials.sessionToken ? { sessionToken: credentials.sessionToken } : {}),
   };
-
-  if (credentials.sessionToken) {
-    creds.sessionToken = credentials.sessionToken;
-  }
 
   Logger.debug(TAG, 'Creating client', {
     region: region || useAuthStore.getState().region,
-    accessKeyId: credentials.accessKeyId,
-    accessKeyId_length: credentials.accessKeyId?.length,
-    secretAccessKey: credentials.secretAccessKey,
-    secretAccessKey_length: credentials.secretAccessKey?.length,
+    accessKeyId: credentials.accessKeyId.substring(0, 8) + '****',
     hasSessionToken: !!credentials.sessionToken,
   });
 
@@ -56,4 +55,24 @@ export function createECSClient(region?: string): ECSClient {
 
 export function createECRClient(region?: string): ECRClient {
   return new ECRClient(createAwsConfig(region));
+}
+
+export function createRDSClient(region?: string): RDSClient {
+  return new RDSClient(createAwsConfig(region));
+}
+
+export function createElastiCacheClient(region?: string): ElastiCacheClient {
+  return new ElastiCacheClient(createAwsConfig(region));
+}
+
+export function createELBClient(region?: string): ElasticLoadBalancingV2Client {
+  return new ElasticLoadBalancingV2Client(createAwsConfig(region));
+}
+
+export function createEC2Client(region?: string): EC2Client {
+  return new EC2Client(createAwsConfig(region));
+}
+
+export function createFSxClient(region?: string): FSxClient {
+  return new FSxClient(createAwsConfig(region));
 }

@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { Logger } from '@/utils/logger';
+import { RADIUS, SPACING, TYPOGRAPHY } from '@/theme/ThemeContext';
 
 interface Props {
   children: React.ReactNode;
@@ -24,8 +27,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     Logger.error('ErrorBoundary', 'Uncaught error', {
       message: error.message,
-      stack: error.stack?.substring(0, 300),
-      componentStack: info.componentStack?.substring(0, 300),
+      stack: error.stack?.substring(0, 500),
+      componentStack: info.componentStack?.substring(0, 500),
     });
   }
 
@@ -36,13 +39,23 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.iconBox}>
+            <Ionicons name="alert-circle" size={48} color="#FF9900" />
+          </View>
           <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.message}>{this.state.error?.message}</Text>
-          <TouchableOpacity style={styles.button} onPress={this.handleReset} activeOpacity={0.8}>
+          <Text style={styles.message}>{this.state.error?.message || 'An unexpected error occurred'}</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={this.handleReset}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
+          >
+            <Ionicons name="refresh" size={18} color="#1a1a2e" style={{ marginRight: SPACING.sm }} />
             <Text style={styles.buttonText}>Try Again</Text>
           </TouchableOpacity>
-        </View>
+        </SafeAreaView>
       );
     }
 
@@ -55,16 +68,43 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1a1a2e',
-    padding: 32,
+    backgroundColor: '#0f0f1a',
+    padding: SPACING.xxxl,
   },
-  title: { fontSize: 20, fontWeight: '700', color: '#FF9900', marginBottom: 12 },
-  message: { fontSize: 14, color: '#a0a0b0', textAlign: 'center', marginBottom: 24 },
+  iconBox: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255,153,0,0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.xxl,
+  },
+  title: {
+    ...TYPOGRAPHY.h2,
+    color: '#FF9900',
+    marginBottom: SPACING.md,
+    textAlign: 'center',
+  },
+  message: {
+    ...TYPOGRAPHY.body,
+    color: '#a0a0b8',
+    textAlign: 'center',
+    marginBottom: SPACING.xxxl,
+    lineHeight: 21,
+  },
   button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#FF9900',
-    borderRadius: 12,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
+    borderRadius: RADIUS.xl,
+    paddingHorizontal: SPACING.xxxl,
+    paddingVertical: SPACING.lg,
+    minWidth: 180,
   },
-  buttonText: { fontSize: 15, fontWeight: '600', color: '#1a1a2e' },
+  buttonText: {
+    ...TYPOGRAPHY.button,
+    color: '#1a1a2e',
+  },
 });

@@ -8,10 +8,11 @@ import {
   UpdateServiceCommand,
   Service,
   TaskDefinition,
+  Deployment,
 } from '@aws-sdk/client-ecs';
 import { createECSClient } from '@/services/aws/client';
 import { Logger } from '@/utils/logger';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 const TAG = 'ECS';
 
@@ -87,25 +88,173 @@ export function useTaskDefinition(taskDefArn: string | null) {
   });
 }
 
+export interface RestartResult {
+  serviceName: string;
+  newDeploymentId: string;
+  rolloutState: string;
+}
+
+export interface RestartProgress {
+  status: 'idle' | 'validating' | 'deploying' | 'verifying' | 'done' | 'error';
+  message: string;
+  deploymentId?: string;
+  rolloutState?: string;
+}
+
+export function validateServiceRestart(service: Service): string | null {
+  if (service.status !== 'ACTIVE') {
+    return 'Service is not ACTIVE. Only ACTIVE services can be restarted.';
+  }
+  if (!service.deploymentConfiguration) {
+    return 'Service has no deployment configuration.';
+  }
+  const minHealthy = service.deploymentConfiguration.minimumHealthyPercent ?? 100;
+  if (minHealthy < 50) {
+    return `Warning: minimum healthy percent is ${minHealthy}%. Availability may be impacted.`;
+  }
+  return null;
+}
+
+export function mapRestartError(err: any): string {
+  const code = err?.name || 'UnknownError';
+  const message = err?.message || '';
+
+  if (code === 'InvalidParameterException') {
+    return 'Invalid parameter. Check the service name and cluster ARN.';
+  }
+  if (code === 'ServiceNotFoundException') {
+    return 'Service not found. It may have been deleted.';
+  }
+  if (code === 'ClusterNotFoundException') {
+    return 'Cluster not found. Verify your selection.';
+  }
+  if (code === 'AccessDeniedException' || code === 'AccessDenied') {
+    return 'Access denied. Your IAM role lacks ecs:UpdateService permission.';
+  }
+  if (message.includes('ThrottlingException') || code === 'ThrottlingException') {
+    return 'API rate limit exceeded. Please wait and try again.';
+  }
+  if (message.includes('too many') || code === 'LimitExceededException') {
+    return 'Too many concurrent deployments. Wait for the current one to finish.';
+  }
+  return `${code}: ${message}`;
+}
+
+async function pollForNewDeployment(
+  clusterArn: string,
+  serviceName: string,
+  previousDeploymentIds: string[],
+  maxAttempts: number = 12,
+): Promise<Deployment | null> {
+  const client = createECSClient();
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    await new Promise((r) => setTimeout(r, 2000));
+
+    const res = await client.send(
+      new DescribeServicesCommand({ cluster: clusterArn, services: [serviceName] }),
+    );
+
+    const svc = res.services?.[0];
+    if (!svc || !svc.deployments) continue;
+
+    const newDeployment = svc.deployments.find(
+      (d) => !previousDeploymentIds.includes(d.id || ''),
+    );
+
+    if (newDeployment) {
+      Logger.info(TAG, `New deployment detected after ${attempt * 2}s`, {
+        deploymentId: newDeployment.id,
+        status: newDeployment.status,
+        rolloutState: newDeployment.rolloutState,
+      });
+      return newDeployment;
+    }
+  }
+  return null;
+}
+
 export function useRestartService() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ clusterArn, serviceName }: { clusterArn: string; serviceName: string }) => {
+  return useMutation<RestartResult, Error, { clusterArn: string; serviceName: string; service?: Service }>({
+    mutationFn: async ({ clusterArn, serviceName, service }) => {
+      Logger.info(TAG, 'Restart initiated', { cluster: clusterArn.split('/').pop(), service: serviceName });
+
+      if (service) {
+        const validationError = validateServiceRestart(service);
+        if (validationError && !validationError.startsWith('Warning')) {
+          Logger.warn(TAG, 'Restart validation failed', { error: validationError });
+          throw new Error(validationError);
+        }
+        if (validationError) {
+          Logger.warn(TAG, 'Restart warning', { warning: validationError });
+        }
+      }
+
+      const previousIds = (service?.deployments || []).map((d: Deployment) => d.id || '');
+
       const client = createECSClient();
-      await client.send(new UpdateServiceCommand({
-        cluster: clusterArn,
-        service: serviceName,
-        forceNewDeployment: true,
-      }));
-      Logger.info(TAG, `Restarted service ${serviceName}`);
+      await client.send(
+        new UpdateServiceCommand({
+          cluster: clusterArn,
+          service: serviceName,
+          forceNewDeployment: true,
+        }),
+      );
+
+      Logger.info(TAG, 'UpdateServiceCommand sent, polling for new deployment...');
+
+      const newDeployment = await pollForNewDeployment(
+        clusterArn,
+        serviceName,
+        previousIds,
+      );
+
+      if (newDeployment) {
+        Logger.info(TAG, 'Restart confirmed', {
+          deploymentId: newDeployment.id,
+          rolloutState: newDeployment.rolloutState,
+        });
+        return {
+          serviceName,
+          newDeploymentId: newDeployment.id || '',
+          rolloutState: newDeployment.rolloutState || 'IN_PROGRESS',
+        };
+      }
+
+      Logger.info(TAG, 'Restart sent (no new deployment detected within window)');
+      return {
+        serviceName,
+        newDeploymentId: 'pending...',
+        rolloutState: 'UNKNOWN',
+      };
     },
-    onSuccess: (_, vars) => {
+
+    onMutate: () => {
+      Logger.info(TAG, 'Restart mutation started (onMutate)');
+    },
+
+    onSuccess: (result, vars) => {
+      Logger.info(TAG, 'Restart completed', {
+        service: vars.serviceName,
+        deploymentId: result.newDeploymentId,
+        rolloutState: result.rolloutState,
+      });
       queryClient.invalidateQueries({ queryKey: ['ecs-services', vars.clusterArn] });
     },
-    onError: (err: any) => {
-      Logger.error(TAG, 'Restart service failed', { error: err.message });
-      Alert.alert('Restart Failed', err?.message || 'Unknown error');
+
+    onError: (err: any, vars) => {
+      const userMessage = mapRestartError(err);
+      Logger.logError(TAG, 'Restart failed', err);
+      Alert.alert(
+        'Restart Failed',
+        userMessage,
+        [{ text: 'OK', style: 'default' }],
+      );
+    },
+
+    onSettled: () => {
+      Logger.info(TAG, 'Restart mutation settled');
     },
   });
 }

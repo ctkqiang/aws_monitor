@@ -1,20 +1,31 @@
 import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TextInput, FlatList, ActivityIndicator, RefreshControl, StyleSheet, Animated } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
+import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useLogGroups } from '@/hooks/useCloudWatch';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
-import { pushBackHandler, popBackHandler } from './MainTabs';
 import LogStreamsScreen from './LogStreamsScreen';
+
+const TAG = 'LogGroups';
 
 function LogGroupCard({ item, onPress, theme, index }: { item: any; onPress: () => void; theme: any; index: number }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1, duration: 300, delay: index * 50,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1, duration: 350, delay: Math.min(index * 60, 500),
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0, delay: Math.min(index * 60, 500),
+        tension: 120, friction: 14, useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const formatBytes = (bytes?: number) => {
@@ -23,32 +34,42 @@ function LogGroupCard({ item, onPress, theme, index }: { item: any; onPress: () 
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
 
+  const shortName = (name: string) => {
+    const parts = name.split('/');
+    return parts.length > 1 ? parts.slice(-2).join('/') : name;
+  };
+
   return (
-    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <RipplePressable onPress={onPress}>
-        <View style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+        <View style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }, SHADOWS.sm]}>
           <View style={[styles.rowAccent, { backgroundColor: theme.accent }]} />
           <View style={styles.rowContent}>
-            <Text style={[styles.name, { color: theme.text }]} numberOfLines={2}>{item.logGroupName}</Text>
+            <View style={styles.rowHeader}>
+              <Ionicons name="document-text-outline" size={14} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+              <Text style={[styles.name, { color: theme.text }]} numberOfLines={2}>{shortName(item.logGroupName)}</Text>
+            </View>
             <View style={styles.rowMeta}>
               {item.storedBytes ? (
                 <View style={[styles.chip, { backgroundColor: theme.bgInput }]}>
+                  <Ionicons name="hardware-chip-outline" size={10} color={theme.textMuted} style={{ marginRight: 4 }} />
                   <Text style={[styles.chipText, { color: theme.textSecondary }]}>{formatBytes(item.storedBytes)}</Text>
                 </View>
               ) : null}
               {item.retentionInDays ? (
-                <View style={[styles.chip, { backgroundColor: theme.bgInput, marginLeft: 6 }]}>
+                <View style={[styles.chip, { backgroundColor: theme.bgInput }]}>
+                  <Ionicons name="time-outline" size={10} color={theme.textMuted} style={{ marginRight: 4 }} />
                   <Text style={[styles.chipText, { color: theme.textSecondary }]}>{item.retentionInDays}d</Text>
                 </View>
               ) : null}
               {item.creationTime ? (
                 <Text style={[styles.tsText, { color: theme.textMuted }]}>
-                  Since {new Date(item.creationTime).toLocaleDateString()}
+                  {new Date(item.creationTime).toLocaleDateString()}
                 </Text>
               ) : null}
             </View>
           </View>
-          <Text style={[styles.chevron, { color: theme.textMuted }]}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} style={{ marginRight: SPACING.md }} />
         </View>
       </RipplePressable>
     </Animated.View>
@@ -71,31 +92,45 @@ export default function LogGroupsScreen() {
   ) || [];
 
   const handleTap = (groupName: string) => {
-    Logger.info('CloudWatch', 'LogGroup tapped', {
+    Logger.info(TAG, 'LogGroup tapped', {
       group: groupName,
       action: 'navigate → log streams',
-      timestamp: new Date().toISOString(),
     });
     setSelectedGroup(groupName);
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <TextInput
-        style={[styles.searchInput, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border }]}
-        placeholder={t('screens.logGroups.searchPlaceholder')}
-        placeholderTextColor={theme.placeholder}
-        value={search}
-        onChangeText={setSearch}
-      />
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={16} color={theme.placeholder} style={styles.searchIcon} />
+        <TextInput
+          style={[styles.searchInput, { color: theme.text }]}
+          placeholder={t('screens.logGroups.searchPlaceholder')}
+          placeholderTextColor={theme.placeholder}
+          value={search}
+          onChangeText={setSearch}
+          autoCorrect={false}
+        />
+        {search.length > 0 && (
+          <RipplePressable onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={18} color={theme.textMuted} />
+          </RipplePressable>
+        )}
+      </View>
+
       {isLoading ? (
-        <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
+        </View>
       ) : error ? (
         <View style={styles.centered}>
-          <Text style={[styles.emptyText, { color: '#e74c3c' }]}>{(error as any)?.message || t('common.error')}</Text>
+          <Ionicons name="cloud-offline-outline" size={48} color={theme.danger} />
+          <Text style={[styles.errorText, { color: theme.danger }]}>{(error as any)?.message || t('common.error')}</Text>
           <RipplePressable onPress={() => refetch()}>
-            <View style={[styles.btn, { backgroundColor: theme.accent }]}>
-              <Text style={[styles.btnText, { color: theme.accentText }]}>{t('common.retry')}</Text>
+            <View style={[styles.retryBtn, { backgroundColor: theme.accent }]}>
+              <Ionicons name="refresh" size={16} color={theme.accentText} style={{ marginRight: SPACING.sm }} />
+              <Text style={[styles.retryText, { color: theme.accentText }]}>{t('common.retry')}</Text>
             </View>
           </RipplePressable>
         </View>
@@ -104,15 +139,19 @@ export default function LogGroupsScreen() {
           data={filtered}
           keyExtractor={(item: any) => item.logGroupName || item.arn || ''}
           renderItem={({ item, index }) => (
-            <LogGroupCard item={item} index={index} theme={theme} onPress={() => handleTap(item.logGroupName)} />
+            <LogGroupCard item={item} index={index} theme={theme} onPress={() => handleTap(item.logGroupName!)} />
           )}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isRefetching || false} onRefresh={refetch} tintColor={theme.accent} colors={[theme.accent]} />
           }
           ListEmptyComponent={
             <View style={styles.centered}>
-              <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t('screens.logGroups.noGroups')}</Text>
+              <Ionicons name="folder-open-outline" size={48} color={theme.textMuted} />
+              <Text style={[styles.emptyText, { color: theme.textMuted }]}>
+                {search ? t('common.noResults') : t('screens.logGroups.noGroups')}
+              </Text>
             </View>
           }
         />
@@ -123,24 +162,53 @@ export default function LogGroupsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  searchInput: { margin: 12, paddingHorizontal: 16, paddingVertical: 13, borderRadius: 12, fontSize: 15, borderWidth: StyleSheet.hairlineWidth },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: SPACING.md,
+    marginVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
+    backgroundColor: 'transparent',
+  },
+  searchIcon: { marginRight: SPACING.sm },
+  searchInput: {
+    flex: 1,
+    paddingVertical: SPACING.md,
+    fontSize: 15,
+  },
   loader: { marginTop: 100 },
-  list: { paddingHorizontal: 12, paddingBottom: 8 },
+  list: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xxl },
   row: {
     flexDirection: 'row', alignItems: 'center',
-    borderRadius: 14, borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 8, overflow: 'hidden',
+    borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: SPACING.sm, overflow: 'hidden',
   },
-  rowAccent: { width: 4, height: '100%', position: 'absolute', left: 0, top: 0, bottom: 0 },
-  rowContent: { flex: 1, padding: 16, paddingLeft: 18 },
-  name: { fontSize: 15, fontWeight: '600', marginBottom: 8, lineHeight: 20 },
-  rowMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
-  chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  chipText: { fontSize: 11, fontWeight: '600' },
-  tsText: { fontSize: 11, marginLeft: 6 },
-  chevron: { fontSize: 22, fontWeight: '300', marginRight: 12 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  emptyText: { fontSize: 15, marginBottom: 12 },
-  btn: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
-  btnText: { fontSize: 14, fontWeight: '600' },
+  rowAccent: { width: 4, alignSelf: 'stretch' },
+  rowContent: { flex: 1, padding: SPACING.lg, paddingLeft: SPACING.md },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm },
+  name: { ...TYPOGRAPHY.bodyBold, flex: 1 },
+  rowMeta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: SPACING.xs },
+  chip: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.sm,
+  },
+  chipText: { ...TYPOGRAPHY.monoSm },
+  tsText: { ...TYPOGRAPHY.caption, marginLeft: 'auto' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xxxl },
+  emptyText: { ...TYPOGRAPHY.body, marginTop: SPACING.md },
+  errorText: { ...TYPOGRAPHY.body, textAlign: 'center', marginVertical: SPACING.md },
+  loadingText: { ...TYPOGRAPHY.caption, marginTop: SPACING.md },
+  retryBtn: {
+    marginTop: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.lg,
+  },
+  retryText: { ...TYPOGRAPHY.bodyBold },
 });

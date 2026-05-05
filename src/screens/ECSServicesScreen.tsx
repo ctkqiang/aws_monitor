@@ -1,17 +1,21 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View, Text, FlatList, TouchableOpacity, ActivityIndicator,
   Alert, StyleSheet, ScrollView, Animated, RefreshControl,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
+import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useClusters, useServices, useRestartService } from '@/hooks/useECS';
 import { useTaskDefinition } from '@/hooks/useECSTaskDef';
 import { useUIStore } from '@/stores/uiStore';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 import { pushBackHandler, popBackHandler } from './MainTabs';
+
+const TAG = 'ECS';
 
 const SectionHeader = ({ title, icon, theme }: { title: string; icon: string; theme: any }) => (
   <View style={[detailStyles.sectionHeader, { borderBottomColor: theme.border }]}>
@@ -235,15 +239,48 @@ export default function ECSServicesScreen() {
     return <TaskDefView taskDefArn={selectedTaskDef} onBack={() => setSelectedTaskDef(null)} />;
   }
 
-  const handleRestart = (serviceName: string) => {
+  const handleRestart = (service: any) => {
     if (!selectedCluster) return;
+
+    const serviceName = service.serviceName;
+    const runningCount = service.runningCount ?? 0;
+    const desiredCount = service.desiredCount ?? 0;
+    const taskDefShort = service.taskDefinition?.split('/').pop() || '';
+    const isPending = restart.isPending;
+
+    if (isPending) return;
+
     Alert.alert(
       t('screens.ecsServices.restartConfirm', { name: serviceName }),
-      '',
+      [
+        t('ecsDetail.launchType', { defaultValue: 'Launch Type' }) + ': ' + (service.launchType || '—'),
+        t('ecsDetail.taskDefinition') + ': ' + taskDefShort,
+        'Running: ' + runningCount + ' / Desired: ' + desiredCount,
+      ].join('\n'),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.restart'), onPress: () => restart.mutate({ clusterArn: selectedCluster, serviceName }) },
-      ]
+        {
+          text: t('common.restart'),
+          onPress: () => {
+            restart.mutate(
+              { clusterArn: selectedCluster, serviceName, service },
+              {
+                onSuccess: (result) => {
+                  Alert.alert(
+                    t('screens.ecsServices.restartSuccess'),
+                    [
+                      t('screens.ecsServices.restartDeploymentId') + ': ' + result.newDeploymentId,
+                      t('ecsDetail.rolloutState') + ': ' + result.rolloutState,
+                      t('screens.ecsServices.restartRefreshHint'),
+                    ].join('\n'),
+                    [{ text: 'OK' }],
+                  );
+                },
+              },
+            );
+          },
+        },
+      ],
     );
   };
 
@@ -303,13 +340,21 @@ export default function ECSServicesScreen() {
           </Text>
         </View>
         <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: theme.accent }]}
-          onPress={() => handleRestart(item.serviceName)}
+          style={[styles.actionBtn, {
+            backgroundColor: restart.isPending ? theme.btnSecondary : theme.accent,
+            opacity: restart.isPending ? 0.6 : 1,
+          }]}
+          onPress={() => handleRestart(item)}
+          disabled={restart.isPending}
           activeOpacity={0.8}
         >
-          <Text style={[styles.actionText, { color: theme.accentText, fontWeight: '700' }]}>
-            {restart.isPending ? '⏳' : t('common.restart')}
-          </Text>
+          {restart.isPending && restart.variables?.serviceName === item.serviceName ? (
+            <ActivityIndicator size="small" color={theme.accentText} />
+          ) : (
+            <Text style={[styles.actionText, { color: theme.accentText, fontWeight: '700' }]}>
+              {t('common.restart')}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
