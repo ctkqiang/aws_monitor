@@ -11,7 +11,7 @@ import RipplePressable from '@/components/RipplePressable';
 
 const TAG = 'ResourceDetail';
 
-export type ResourceType = 'rds' | 'elasticache' | 'lb' | 'sg' | 'ontap';
+export type ResourceType = 'rds' | 'elasticache' | 'lb' | 'sg' | 'ontap' | 's3';
 
 interface Props {
   resourceType: ResourceType;
@@ -406,6 +406,57 @@ function renderONTAPDetail(item: any, theme: any) {
   );
 }
 
+function renderS3Detail(item: any, theme: any) {
+  const formatSize = (bytes?: number) => {
+    if (!bytes) return '\u2014';
+    if (bytes > 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+    if (bytes > 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    if (bytes > 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${bytes} B`;
+  };
+
+  return (
+    <>
+      <View style={[styles.heroCard, { backgroundColor: theme.bgCard }, SHADOWS.md]}>
+        <View style={styles.heroTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.heroName, { color: theme.text }]}>{item.Name}</Text>
+            <Text style={[styles.heroArn, { color: theme.textMuted }]} numberOfLines={1}>
+              s3://{item.Name}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.heroGrid}>
+          <HeroStat label="Region" value={item.BucketRegion || 'us-east-1'} theme={theme} />
+          <HeroStat label="Created" value={item.CreationDate ? new Date(item.CreationDate).toLocaleDateString() : ''} theme={theme} />
+        </View>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: theme.bgCard }]}>
+        <SectionTitle title="General" icon="information-circle-outline" theme={theme} />
+        <DetailRow label="Bucket Name" value={item.Name} theme={theme} />
+        <DetailRow label="Region" value={item.BucketRegion} theme={theme} />
+        <DetailRow label="Creation Date" value={item.CreationDate ? new Date(item.CreationDate).toLocaleString() : ''} theme={theme} />
+      </View>
+
+      <View style={[styles.card, { backgroundColor: theme.bgCard }]}>
+        <SectionTitle title="Access" icon="lock-closed-outline" theme={theme} />
+        <DetailRow label="Block Public Access" value={item.PublicAccessBlockConfiguration ? 'Configured' : 'Not configured'} theme={theme} />
+        <DetailRow label="Object Ownership" value={item.OwnershipControls?.Rules?.[0]?.ObjectOwnership || 'Bucket owner enforced'} theme={theme} />
+      </View>
+
+      {item.Tags?.length > 0 && (
+        <View style={[styles.card, { backgroundColor: theme.bgCard }]}>
+          <SectionTitle title={`Tags (${item.Tags.length})`} icon="pricetags-outline" theme={theme} />
+          {item.Tags.map((t: any, i: number) => (
+            <DetailRow key={i} label={t.Key} value={t.Value} theme={theme} />
+          ))}
+        </View>
+      )}
+    </>
+  );
+}
+
 function HeroStat({ label, value, theme }: { label: string; value: any; theme: any }) {
   return (
     <View style={styles.heroStat}>
@@ -432,6 +483,7 @@ export default function ResourceDetailScreen({ resourceType, item, onBack }: Pro
       case 'lb': return renderLBDetail(item, theme);
       case 'sg': return renderSGDetail(item, theme);
       case 'ontap': return renderONTAPDetail(item, theme);
+      case 's3': return renderS3Detail(item, theme);
       default: return null;
     }
   };
@@ -443,6 +495,7 @@ export default function ResourceDetailScreen({ resourceType, item, onBack }: Pro
       case 'lb': return item?.LoadBalancerName || '';
       case 'sg': return item?.GroupName || '';
       case 'ontap': return item?.FileSystemId || '';
+      case 's3': return item?.Name || '';
       default: return '';
     }
   };

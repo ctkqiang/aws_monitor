@@ -51,7 +51,9 @@
     "logs": "CloudWatch",
     "ecs": "ECS",
     "ecr": "ECR",
-    "resources": "Resources"
+    "resources": "Resources",
+    "s3": "S3",
+    "billing": "Billing"
   },
   "dashboard": {
     "title": "AWS Resources Overview",
@@ -147,6 +149,48 @@
     "level": "Level",
     "clear": "Clear",
     "noEntries": "No log entries"
+  },
+  "billing": {
+    "currentPeriod": "Current Period",
+    "spendingTrend": "Spending Trend",
+    "serviceBreakdown": "Service Breakdown",
+    "usageThresholds": "Usage Thresholds",
+    "billingSummary": "Billing Summary",
+    "periodTotal": "Period Total",
+    "previousPeriod": "Previous Period",
+    "trend": "Trend",
+    "estMonthly": "Est. Monthly",
+    "thresholdSafe": "Safe",
+    "thresholdWarning": "Warning",
+    "thresholdAlert": "Alert",
+    "thresholdCritical": "Critical",
+    "permissionNote": "Billing data requires the IAM permission ce:GetCostAndUsage attached to your user or role.",
+    "trendUp": "Up",
+    "trendDown": "Down",
+    "trendFlat": "Flat"
+  },
+  "s3": {
+    "noBuckets": "No S3 buckets found",
+    "noObjects": "Bucket is empty",
+    "objects": "objects",
+    "searchObjects": "Search objects...",
+    "maxObjectsShown": "Showing first 2000 objects. Use search to filter."
+  },
+  "accounts": {
+    "title": "Account Management",
+    "manageBtn": "Manage Accounts ({{count}})",
+    "setupBtn": "Set Up Multi-Account",
+    "addTitle": "Add Account",
+    "editTitle": "Edit Account",
+    "alias": "Alias",
+    "saved": "Account updated successfully",
+    "created": "Account saved successfully",
+    "deleted": "Account deleted",
+    "deleteConfirm": "Delete {{name}}?",
+    "deleteWarning": "This action cannot be undone.",
+    "emptyTitle": "No accounts yet",
+    "emptySubtitle": "Add AWS accounts to quickly switch between them",
+    "selectHint": "Tap an account to pre-fill the login form"
   },
   "errors": {
     "missingPermission": "Missing permission: {{action}}. Contact your AWS admin.",

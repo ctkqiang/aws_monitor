@@ -6,6 +6,8 @@ import { ElastiCacheClient } from '@aws-sdk/client-elasticache';
 import { ElasticLoadBalancingV2Client } from '@aws-sdk/client-elastic-load-balancing-v2';
 import { EC2Client } from '@aws-sdk/client-ec2';
 import { FSxClient } from '@aws-sdk/client-fsx';
+import { CostExplorerClient } from '@aws-sdk/client-cost-explorer';
+import { S3Client } from '@aws-sdk/client-s3';
 import { FetchHttpHandler } from '@smithy/fetch-http-handler';
 import { useAuthStore } from '@/stores/authStore';
 import { checkCredentialExpiry } from '@/services/auth/auth';
@@ -75,4 +77,12 @@ export function createEC2Client(region?: string): EC2Client {
 
 export function createFSxClient(region?: string): FSxClient {
   return new FSxClient(createAwsConfig(region));
+}
+
+export function createCostExplorerClient(region?: string): CostExplorerClient {
+  return new CostExplorerClient(createAwsConfig(region));
+}
+
+export function createS3Client(region?: string): S3Client {
+  return new S3Client(createAwsConfig(region));
 }

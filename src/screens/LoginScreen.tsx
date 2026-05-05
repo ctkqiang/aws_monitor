@@ -12,7 +12,9 @@ import { signInWithAws } from '@/services/auth/auth';
 import { useLoginStore } from '@/stores/loginStore';
 import { useTheme } from '@/theme/ThemeContext';
 import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
+import { useAccountsStore } from '@/stores/accountsStore';
 import { Logger } from '@/utils/logger';
+import AccountManagementScreen from './AccountManagementScreen';
 
 const TAG = 'LoginScreen';
 
@@ -21,12 +23,14 @@ export default function LoginScreen() {
   const theme = useTheme();
   const savedParams = useLoginStore((st) => st.savedParams);
   const saveLogin = useLoginStore((st) => st.saveLogin);
+  const accountsCount = useAccountsStore((s) => s.accounts.length);
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [region, setRegion] = React.useState(savedParams?.region || 'us-east-1');
   const [accessKeyId, setAccessKeyId] = React.useState(savedParams?.accessKeyId || '');
   const [secretAccessKey, setSecretAccessKey] = React.useState('');
   const [showSecret, setShowSecret] = React.useState(false);
+  const [showAccounts, setShowAccounts] = React.useState(false);
 
   const logoScale = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -58,6 +62,21 @@ export default function LoginScreen() {
   }, []);
 
   const isFormValid = region.trim() && accessKeyId.trim() && secretAccessKey.trim();
+
+  if (showAccounts) {
+    return (
+      <AccountManagementScreen
+        onBack={() => setShowAccounts(false)}
+        onSelect={(account) => {
+          setRegion(account.region);
+          setAccessKeyId(account.accessKeyId);
+          setSecretAccessKey(account.secretAccessKey);
+          setShowAccounts(false);
+          Logger.info(TAG, 'Account selected for login', { region: account.region });
+        }}
+      />
+    );
+  }
 
   const handleSignIn = async () => {
     if (!isFormValid) {
@@ -125,6 +144,43 @@ export default function LoginScreen() {
             ]}>
               {t('auth.signInPrompt')}
             </Animated.Text>
+
+            {accountsCount > 0 && (
+              <Animated.View style={{ opacity: contentOpacity, marginTop: SPACING.lg }}>
+                <TouchableOpacity
+                  style={[styles.accountsBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+                  onPress={() => {
+                    Logger.info(TAG, 'Manage accounts opened');
+                    setShowAccounts(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="people-outline" size={18} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+                  <Text style={[styles.accountsBtnText, { color: theme.text }]}>
+                    {t('accounts.manageBtn', { count: accountsCount })}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+                </TouchableOpacity>
+              </Animated.View>
+            )}
+
+            {accountsCount === 0 && (
+              <Animated.View style={{ opacity: contentOpacity, marginTop: SPACING.lg }}>
+                <TouchableOpacity
+                  style={[styles.accountsBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+                  onPress={() => {
+                    Logger.info(TAG, 'Manage accounts opened (add first)');
+                    setShowAccounts(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle-outline" size={18} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+                  <Text style={[styles.accountsBtnText, { color: theme.text }]}>
+                    {t('accounts.setupBtn')}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            )}
           </View>
 
           <Animated.View style={[
@@ -308,5 +364,17 @@ const styles = StyleSheet.create({
   },
   footerText: {
     ...TYPOGRAPHY.caption,
+  },
+  accountsBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: RADIUS.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  accountsBtnText: {
+    ...TYPOGRAPHY.bodyBold,
+    flex: 1,
   },
 });

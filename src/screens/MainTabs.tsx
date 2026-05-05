@@ -16,9 +16,10 @@ import ECSServicesScreen from './ECSServicesScreen';
 import ECRReposScreen from './ECRReposScreen';
 import ResourcesScreen from './ResourcesScreen';
 import DashboardScreen from './DashboardScreen';
+import BillingScreen from './BillingScreen';
 import SettingsScreen from './SettingsScreen';
 
-type Tab = 'dashboard' | 'logs' | 'ecs' | 'ecr' | 'resources' | 'settings';
+type Tab = 'dashboard' | 'logs' | 'ecs' | 'ecr' | 'resources' | 's3' | 'billing' | 'settings';
 
 const TAB_ICONS: Record<Tab, keyof typeof Ionicons.glyphMap> = {
   dashboard: 'apps',
@@ -26,6 +27,8 @@ const TAB_ICONS: Record<Tab, keyof typeof Ionicons.glyphMap> = {
   ecs: 'server',
   ecr: 'cube',
   resources: 'albums',
+  s3: 'cloud',
+  billing: 'card',
   settings: 'options',
 };
 
@@ -53,10 +56,10 @@ export default function MainTabs() {
 
   const tabIndicatorLeft = useRef(new Animated.Value(0)).current;
   const tabWidths = useRef<Record<Tab, number>>({
-    dashboard: 0, logs: 0, ecs: 0, ecr: 0, resources: 0, settings: 0,
+    dashboard: 0, logs: 0, ecs: 0, ecr: 0, resources: 0, s3: 0, billing: 0, settings: 0,
   });
   const tabPositions = useRef<Record<Tab, number>>({
-    dashboard: 0, logs: 0, ecs: 0, ecr: 0, resources: 0, settings: 0,
+    dashboard: 0, logs: 0, ecs: 0, ecr: 0, resources: 0, s3: 0, billing: 0, settings: 0,
   });
 
   useEffect(() => {
@@ -86,6 +89,7 @@ export default function MainTabs() {
     { key: 'ecs', label: t('tabs.ecs') },
     { key: 'ecr', label: t('tabs.ecr') },
     { key: 'resources', label: t('tabs.resources') },
+    { key: 'billing', label: t('tabs.billing') },
     { key: 'settings', label: t('common.settings') },
   ];
 
@@ -96,6 +100,7 @@ export default function MainTabs() {
       case 'ecs': return <ECSServicesScreen />;
       case 'ecr': return <ECRReposScreen />;
       case 'resources': return <ResourcesScreen />;
+      case 'billing': return <BillingScreen />;
       case 'settings': return <SettingsScreen />;
     }
   };

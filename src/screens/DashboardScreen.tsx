@@ -106,9 +106,7 @@ export default function DashboardScreen() {
   const rdsUnavailable = (rds.data?.length || 0) - rdsAvailable;
   const cacheAvailable = elasticache.data?.filter((c: any) => c.CacheClusterStatus === 'available').length || 0;
   const lbActive = lb.data?.filter((l: any) => l.State?.Code === 'active').length || 0;
-  const ontapSystems = fsx.data?.filter((f: any) => f.FileSystemType === 'ONTAP') || [];
-  const ontapAvailable = ontapSystems.filter((f: any) => f.Lifecycle === 'AVAILABLE').length;
-
+ 
   const [detailItem, setDetailItem] = React.useState<any>(null);
   const [detailType, setDetailType] = React.useState<ResourceType>('rds');
 
@@ -152,14 +150,6 @@ export default function DashboardScreen() {
       value: sg.data?.length ?? '\u2014',
       icon: 'shield-checkmark',
       color: '#f39c12',
-    },
-    {
-      label: t('dashboard.ontapStorage'),
-      value: ontapSystems.length,
-      icon: 'folder',
-      color: '#16a085',
-      accentLabel: t('dashboard.available'),
-      accentValue: ontapAvailable,
     },
     {
       label: t('dashboard.ecsClusters'),
@@ -253,19 +243,7 @@ export default function DashboardScreen() {
               />
             ))}
 
-            <SectionHeader title={t('dashboard.ontapStorage')} icon="folder" count={ontapSystems.length} theme={theme} />
-            {ontapSystems.slice(0, 3).map((item: any, i: number) => (
-              <MiniResourceRow
-                key={item.FileSystemId}
-                name={item.FileSystemId}
-                meta={`${item.StorageCapacity || 0} GiB | ${item.StorageType || ''}`}
-                status={item.Lifecycle}
-                isGood={item.Lifecycle === 'AVAILABLE'}
-                theme={theme}
-                index={i}
-                onPress={() => { setDetailType('ontap'); setDetailItem(item); }}
-              />
-            ))}
+            
 
             <View style={{ height: SPACING.xxl }} />
           </>

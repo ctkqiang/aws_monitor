@@ -12,19 +12,21 @@ import { useElastiCacheClusters } from '@/hooks/useElastiCache';
 import { useLoadBalancers } from '@/hooks/useELB';
 import { useSecurityGroups } from '@/hooks/useEC2';
 import { useFSxFileSystems } from '@/hooks/useFSx';
+import { useBuckets } from '@/hooks/useS3';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 import ResourceDetailScreen, { ResourceType } from './ResourceDetailScreen';
 
 const TAG = 'Resources';
 
-type ResourceTab = 'rds' | 'elasticache' | 'lb' | 'sg' | 'ontap';
+type ResourceTab = 'rds' | 'elasticache' | 'lb' | 'sg' | 's3';
 
 const TABS: { key: ResourceTab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'rds', label: 'RDS', icon: 'server' },
   { key: 'elasticache', label: 'ElastiCache', icon: 'flash' },
   { key: 'lb', label: 'Load Balancers', icon: 'git-network' },
   { key: 'sg', label: 'Security Groups', icon: 'shield-checkmark' },
+  { key: 's3', label: 'S3', icon: 'cloud' },
 ];
 
 function ResourceCard({
@@ -93,6 +95,7 @@ export default function ResourcesScreen() {
   const lb = useLoadBalancers();
   const sg = useSecurityGroups();
   const fsx = useFSxFileSystems();
+  const s3 = useBuckets();
 
   if (selectedItem) {
     return (
@@ -110,7 +113,7 @@ export default function ResourcesScreen() {
       case 'elasticache': return elasticache;
       case 'lb': return lb;
       case 'sg': return sg;
-      case 'ontap': return fsx;
+      case 's3': return s3;
     }
   };
 
@@ -170,16 +173,15 @@ export default function ResourcesScreen() {
     );
   };
 
-  const renderONTAPItem = ({ item, index }: { item: any; index: number }) => (
+ 
+
+  const renderS3Item = ({ item, index }: { item: any; index: number }) => (
     <ResourceCard
-      title={item.FileSystemId}
-      subtitle={`${item.FileSystemType} | ${item.StorageType || ''}`}
-      meta={`${item.StorageCapacity || 0} GiB | ${item.SubnetIds?.length || 0} subnet(s)`}
-      status={item.Lifecycle}
-      statusColor={item.Lifecycle === 'AVAILABLE' ? theme.success : theme.danger}
+      title={item.Name}
+      meta={item.CreationDate ? new Date(item.CreationDate).toLocaleDateString() : ''}
       theme={theme}
       index={index}
-      onPress={() => { setSelectedType('ontap'); setSelectedItem(item); }}
+      onPress={() => { setSelectedType('s3'); setSelectedItem(item); }}
     />
   );
 
@@ -189,7 +191,7 @@ export default function ResourcesScreen() {
       case 'elasticache': return renderElastiCacheItem;
       case 'lb': return renderLBItem;
       case 'sg': return renderSGItem;
-      case 'ontap': return renderONTAPItem;
+      case 's3': return renderS3Item;
     }
   };
 
@@ -199,7 +201,7 @@ export default function ResourcesScreen() {
       case 'elasticache': return t('dashboard.noCache') || 'No ElastiCache clusters found';
       case 'lb': return t('dashboard.noLB') || 'No Load Balancers found';
       case 'sg': return t('dashboard.noSG') || 'No Security Groups found';
-      case 'ontap': return t('dashboard.noONTAP') || 'No ONTAP storage systems found';
+      case 's3': return t('s3.noBuckets') || 'No S3 buckets found';
     }
   };
 
@@ -209,7 +211,7 @@ export default function ResourcesScreen() {
       case 'elasticache': return elasticache.data || [];
       case 'lb': return lb.data || [];
       case 'sg': return sg.data || [];
-      case 'ontap': return (fsx.data || []).filter((f: any) => f.FileSystemType === 'ONTAP');
+      case 's3': return s3.data || [];
     }
   };
 

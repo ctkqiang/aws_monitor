@@ -51,7 +51,9 @@
     "logs": "CloudWatch",
     "ecs": "ECS",
     "ecr": "ECR",
-    "resources": "资源"
+    "resources": "资源",
+    "s3": "S3",
+    "billing": "账单"
   },
   "dashboard": {
     "title": "AWS 资源概览",
@@ -147,6 +149,48 @@
     "level": "级别",
     "clear": "清空",
     "noEntries": "暂无日志条目"
+  },
+  "billing": {
+    "currentPeriod": "当前周期",
+    "spendingTrend": "消费趋势",
+    "serviceBreakdown": "服务费用明细",
+    "usageThresholds": "用量阈值",
+    "billingSummary": "账单摘要",
+    "periodTotal": "周期总额",
+    "previousPeriod": "上期",
+    "trend": "趋势",
+    "estMonthly": "预估月费",
+    "thresholdSafe": "安全",
+    "thresholdWarning": "警告",
+    "thresholdAlert": "注意",
+    "thresholdCritical": "危险",
+    "permissionNote": "账单数据需要 IAM 权限 ce:GetCostAndUsage 附加到您的用户或角色。",
+    "trendUp": "上涨",
+    "trendDown": "下降",
+    "trendFlat": "持平"
+  },
+  "s3": {
+    "noBuckets": "未找到 S3 Bucket",
+    "noObjects": "Bucket 为空",
+    "objects": "个对象",
+    "searchObjects": "搜索对象...",
+    "maxObjectsShown": "显示前 2000 个对象。使用搜索过滤。"
+  },
+  "accounts": {
+    "title": "账户管理",
+    "manageBtn": "管理账户 ({{count}})",
+    "setupBtn": "设置多账户",
+    "addTitle": "添加账户",
+    "editTitle": "编辑账户",
+    "alias": "别名",
+    "saved": "账户已更新",
+    "created": "账户已保存",
+    "deleted": "账户已删除",
+    "deleteConfirm": "删除 {{name}}？",
+    "deleteWarning": "此操作不可撤销。",
+    "emptyTitle": "暂无账户",
+    "emptySubtitle": "添加 AWS 账户以快速切换登录",
+    "selectHint": "点击账户可快速填充登录表单"
   },
   "errors": {
     "missingPermission": "缺少权限: {{action}}。联系 AWS 管理员。",
