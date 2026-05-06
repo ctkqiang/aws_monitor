@@ -14,14 +14,39 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "xin.ctkqiang.awsight"
+      "bundleIdentifier": "xin.ctkqiang.awsight",
+      "associatedDomains": [
+        "webcredentials:awsight.app",
+        "webcredentials:awsight.app"
+      ],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/applogo.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "xin.ctkqiang.awsight"
+      "package": "xin.ctkqiang.awsight",
+      "allowBackup": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "awsight.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/applogo.png"

@@ -372,7 +372,9 @@ export default function LoginScreen() {
                   autoCorrect={false}
                   accessibilityLabel={t('auth.accessKeyId')}
                   accessibilityState={{ disabled: isLoading }}
+                  autoComplete="username"
                   textContentType="username"
+                  importantForAutofill="yes"
                   maxLength={24}
                 />
               </View>
@@ -395,7 +397,9 @@ export default function LoginScreen() {
                   autoCorrect={false}
                   accessibilityLabel={t('auth.secretAccessKey')}
                   accessibilityState={{ disabled: isLoading }}
+                  autoComplete="current-password"
                   textContentType="password"
+                  importantForAutofill="yes"
                 />
                 <Pressable
                   onPress={() => setShowSecret(!showSecret)}
