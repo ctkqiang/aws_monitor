@@ -466,7 +466,7 @@ export default function ResourceDetailScreen({ resourceType, item, onBack }: Pro
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 280, useNativeDriver: true }).start();
-    Logger.info(TAG, `ResourceDetail opened: ${resourceType}`, { id: item?.DBInstanceIdentifier || item?.CacheClusterId || item?.LoadBalancerName || item?.GroupId || item?.FileSystemId });
+    Logger.info(TAG, `资源详情已打开: ${resourceType}`, { id: item?.DBInstanceIdentifier || item?.CacheClusterId || item?.LoadBalancerName || item?.GroupId || item?.FileSystemId });
   }, []);
 
   const renderDetail = () => {

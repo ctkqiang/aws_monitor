@@ -234,7 +234,7 @@ export default function ResourcesScreen() {
                 isActive && { backgroundColor: theme.accentLight },
               ]}
               onPress={() => {
-                Logger.info(TAG, 'Resource tab switched', { to: tab.key });
+                Logger.info(TAG, '资源标签页已切换', { to: tab.key });
                 setActiveTab(tab.key);
               }}
               activeOpacity={0.7}

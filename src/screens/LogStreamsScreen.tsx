@@ -84,7 +84,7 @@ export default function LogStreamsScreen({ logGroupName, onBack }: Props) {
   }
 
   const handleTap = (streamName: string) => {
-    Logger.info(TAG, 'LogStream tapped', {
+    Logger.info(TAG, '日志流已点击', {
       group: logGroupName,
       stream: streamName,
       action: 'navigate → log events',

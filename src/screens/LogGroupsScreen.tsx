@@ -92,7 +92,7 @@ export default function LogGroupsScreen() {
   ) || [];
 
   const handleTap = (groupName: string) => {
-    Logger.info(TAG, 'LogGroup tapped', {
+    Logger.info(TAG, '日志组已点击', {
       group: groupName,
       action: 'navigate → log streams',
     });

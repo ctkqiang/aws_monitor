@@ -59,7 +59,7 @@ export default function LogEventsScreen({ logGroupName, logStreamName, onBack }:
   const [filter, setFilter] = React.useState('');
 
   React.useEffect(() => {
-    Logger.info(TAG, 'LogEvents screen mounted', {
+    Logger.info(TAG, '日志事件页面已挂载', {
       group: logGroupName,
       stream: logStreamName,
     });
@@ -74,7 +74,7 @@ export default function LogEventsScreen({ logGroupName, logStreamName, onBack }:
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <RipplePressable onPress={() => {
-          Logger.info(TAG, 'LogEvents back', { stream: logStreamName });
+          Logger.info(TAG, '日志事件返回', { stream: logStreamName });
           onBack();
         }}>
           <View style={styles.backRow}>

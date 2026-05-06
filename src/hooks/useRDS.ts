@@ -1,9 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  RDSClient,
-  DescribeDBInstancesCommand,
-  DBInstance,
-} from '@aws-sdk/client-rds';
+import { RDSClient, DescribeDBInstancesCommand, DBInstance } from '@aws-sdk/client-rds';
 import { createRDSClient } from '@/services/aws/client';
 import { Logger } from '@/utils/logger';
 
@@ -22,15 +18,14 @@ export function useRDSInstances() {
           if (res.DBInstances) instances.push(...res.DBInstances);
           marker = res.Marker;
         } while (marker);
-        Logger.info(TAG, `Fetched ${instances.length} RDS instances`);
+        Logger.info(TAG, `获取到 ${instances.length} 个 RDS 实例`);
         return instances;
       } catch (e: any) {
-        Logger.logError(TAG, 'DescribeDBInstances failed', e);
+        Logger.logError(TAG, '获取 RDS 实例列表失败', e);
         throw e;
       }
     },
-    staleTime: 30000,
-    retry: 2,
+    staleTime: 30000, retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }

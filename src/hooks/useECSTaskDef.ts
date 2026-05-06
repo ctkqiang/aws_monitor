@@ -1,27 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  ECSClient,
-  DescribeTaskDefinitionCommand,
-} from '@aws-sdk/client-ecs';
+import { ECSClient, DescribeTaskDefinitionCommand, TaskDefinition } from '@aws-sdk/client-ecs';
 import { createECSClient } from '@/services/aws/client';
 import { Logger } from '@/utils/logger';
 
-const TAG = 'ECSTaskDef';
+const TAG = 'ECS';
 
 export function useTaskDefinition(taskDefArn: string | null) {
-  return useQuery({
-    queryKey: ['task-def', taskDefArn],
+  return useQuery<TaskDefinition>({
+    queryKey: ['ecs-task-def-detail', taskDefArn],
     queryFn: async () => {
-      if (!taskDefArn) return null;
-      try {
-        const client = createECSClient();
-        const res = await client.send(new DescribeTaskDefinitionCommand({ taskDefinition: taskDefArn }));
-        Logger.info(TAG, `Fetched task def: ${res.taskDefinition?.family}`);
-        return res.taskDefinition;
-      } catch (e: any) {
-        Logger.error(TAG, 'DescribeTaskDefinition failed', { error: e.message, code: e.name });
-        throw e;
-      }
+      if (!taskDefArn) throw new Error('缺少任务定义 ARN');
+      const client = createECSClient();
+      const res = await client.send(new DescribeTaskDefinitionCommand({ taskDefinition: taskDefArn }));
+      if (!res.taskDefinition) throw new Error('未找到任务定义');
+      Logger.info(TAG, `获取到任务定义: ${res.taskDefinition?.family}`);
+      return res.taskDefinition;
     },
     enabled: !!taskDefArn,
     staleTime: 60000,

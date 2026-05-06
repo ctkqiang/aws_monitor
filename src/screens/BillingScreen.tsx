@@ -199,7 +199,7 @@ export default function BillingScreen() {
                   { borderColor: theme.border },
                 ]}
                 onPress={() => {
-                  Logger.info(TAG, 'Period changed', { from: period, to: p.key });
+                  Logger.info(TAG, '时间周期已切换', { from: period, to: p.key });
                   setPeriod(p.key);
                 }}
                 activeOpacity={0.7}

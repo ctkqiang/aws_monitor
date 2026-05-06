@@ -1,12 +1,17 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TouchableOpacity, Alert, ScrollView, StyleSheet, Linking } from 'react-native';
+import { View, Text, Alert, ScrollView, StyleSheet, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from '@/services/auth/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { useLoginStore } from '@/stores/loginStore';
 import { useTheme, setThemeMode, useResolvedThemeMode, useThemeMode } from '@/theme/ThemeContext';
+import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
+import { Logger } from '@/utils/logger';
+import RipplePressable from '@/components/RipplePressable';
 import DebugLogScreen from './DebugLogScreen';
+
+const TAG = 'Settings';
 
 const THEME_OPTIONS: Array<{ mode: 'system' | 'light' | 'dark'; label: string; icon: keyof typeof Ionicons.glyphMap; desc: string }> = [
   { mode: 'system', label: 'System', icon: 'contrast', desc: 'Follow device settings' },
@@ -32,6 +37,7 @@ export default function SettingsScreen() {
   }
 
   const handleClearCache = () => {
+    Logger.info(TAG, '缓存已清除');
     Alert.alert('', t('screens.settings.clearCacheSuccess'));
   };
 
@@ -45,11 +51,12 @@ export default function SettingsScreen() {
           text: t('common.confirm'),
           style: 'destructive',
           onPress: () => {
+            Logger.info(TAG, '凭证已重置');
             resetLogin();
             Alert.alert('', t('auth.resetDone'));
           },
         },
-      ]
+      ],
     );
   };
 
@@ -59,99 +66,144 @@ export default function SettingsScreen() {
       t('screens.settings.signOutConfirm'),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.confirm'), style: 'destructive', onPress: signOut },
-      ]
+        {
+          text: t('common.confirm'),
+          style: 'destructive',
+          onPress: () => {
+            Logger.info(TAG, '已请求退出登录');
+            signOut();
+          },
+        },
+      ],
     );
   };
 
   const handleThemeChange = (mode: 'system' | 'light' | 'dark') => {
+    Logger.info(TAG, '主题已切换', { mode });
     setThemeMode(mode);
   };
 
   const handleOpenRepo = () => {
     Linking.openURL(REPO_URL).catch(() => {
-      Alert.alert('Error', 'Unable to open link');
+      Alert.alert(t('common.error'), 'Unable to open link');
     });
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.bg }]} contentContainerStyle={styles.content}>
-      <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
-        <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('screens.settings.region')}</Text>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.bg }]}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      accessibilityRole="scrollbar"
+    >
+      <View style={[styles.section, { backgroundColor: theme.bgCard }, SHADOWS.sm]}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="globe-outline" size={16} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+          <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('screens.settings.region')}</Text>
+        </View>
         <Text style={[styles.value, { color: theme.text }]}>{region}</Text>
         <Text style={[styles.hint, { color: theme.placeholder }]}>{t('screens.settings.regionHint')}</Text>
       </View>
 
-      <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
-        <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('auth.theme')}</Text>
-        <Text style={[styles.hint, { color: theme.placeholder, marginBottom: 12 }]}>
-          {t('about.currentTheme')}: {resolvedMode === 'dark' ? 'Dark' : 'Light'}
+      <View style={[styles.section, { backgroundColor: theme.bgCard }, SHADOWS.sm]}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="color-palette-outline" size={16} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+          <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('auth.theme')}</Text>
+        </View>
+        <Text style={[styles.hint, { color: theme.placeholder, marginBottom: SPACING.md }]}>
+          {t('about.currentTheme')}: {resolvedMode === 'dark' ? '\u263E Dark' : '\u2600 Light'}
         </Text>
         {THEME_OPTIONS.map((opt) => {
           const isSelected = themeMode === opt.mode;
           return (
-            <TouchableOpacity
+            <RipplePressable
               key={opt.mode}
-              style={[
-                styles.themeRow,
-                { borderColor: isSelected ? theme.accent : theme.border },
-                isSelected && { backgroundColor: resolvedMode === 'dark' ? '#1f1f38' : '#fff8ec' },
-              ]}
               onPress={() => handleThemeChange(opt.mode)}
-              activeOpacity={0.7}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`${opt.label}: ${opt.desc}`}
             >
-              <View style={styles.themeInfo}>
-                <Ionicons name={opt.icon} size={20} color={isSelected ? theme.accent : theme.textMuted} style={{ marginRight: 12 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.themeLabel, { color: theme.text }]}>{opt.label}</Text>
-                  <Text style={[styles.themeDesc, { color: theme.textMuted }]}>{opt.desc}</Text>
+              <View
+                style={[
+                  styles.themeRow,
+                  { borderColor: isSelected ? theme.accent : theme.border },
+                  isSelected && { backgroundColor: resolvedMode === 'dark' ? '#1f1f38' : '#fff8ec' },
+                ]}
+              >
+                <View style={styles.themeInfo}>
+                  <Ionicons name={opt.icon} size={20} color={isSelected ? theme.accent : theme.textMuted} style={{ marginRight: SPACING.md }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.themeLabel, { color: theme.text }]}>{opt.label}</Text>
+                    <Text style={[styles.themeDesc, { color: theme.textMuted }]}>{opt.desc}</Text>
+                  </View>
+                </View>
+                <View style={[styles.radio, { borderColor: isSelected ? theme.accent : theme.border }, isSelected && { borderColor: theme.accent, backgroundColor: theme.accent }]}>
+                  {isSelected && <Ionicons name="checkmark" size={14} color={theme.accentText} />}
                 </View>
               </View>
-              <View style={[styles.radio, { borderColor: theme.border }, isSelected && { borderColor: theme.accent, backgroundColor: theme.accent }]}>
-                {isSelected && <Ionicons name="checkmark" size={14} color="#ffffff" />}
-              </View>
-            </TouchableOpacity>
+            </RipplePressable>
           );
         })}
       </View>
 
-      <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
-        <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('about.debug')}</Text>
-        <TouchableOpacity style={[styles.btnSecondary, { backgroundColor: theme.btnSecondary }]} onPress={() => setShowDebug(true)} activeOpacity={0.8}>
-          <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>{t('about.debugLogs')}</Text>
-        </TouchableOpacity>
+      <View style={[styles.section, { backgroundColor: theme.bgCard }, SHADOWS.sm]}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="bug-outline" size={16} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+          <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('about.debug')}</Text>
+        </View>
+        <RipplePressable onPress={() => setShowDebug(true)} accessibilityRole="button" accessibilityLabel={t('about.debugLogs')}>
+          <View style={[styles.btnSecondary, { backgroundColor: theme.btnSecondary }]}>
+            <Ionicons name="bug" size={16} color={theme.btnSecondaryText} style={{ marginRight: SPACING.sm }} />
+            <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>{t('about.debugLogs')}</Text>
+          </View>
+        </RipplePressable>
       </View>
 
       {hasSavedCredentials && (
-        <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
-          <TouchableOpacity style={[styles.btnPrimary, { backgroundColor: theme.danger }]} onPress={handleResetCredentials} activeOpacity={0.8}>
-            <Text style={[styles.btnPrimaryText, { color: '#ffffff' }]}>{t('auth.resetCredentials')}</Text>
-          </TouchableOpacity>
+        <View style={[styles.section, { backgroundColor: theme.bgCard }, SHADOWS.sm]}>
+          <RipplePressable onPress={handleResetCredentials} accessibilityRole="button" accessibilityLabel={t('auth.resetCredentials')}>
+            <View style={[styles.btnDanger, { backgroundColor: theme.danger }]}>
+              <Ionicons name="key-outline" size={16} color="#fff" style={{ marginRight: SPACING.sm }} />
+              <Text style={[styles.btnDangerText, { color: '#ffffff' }]}>{t('auth.resetCredentials')}</Text>
+            </View>
+          </RipplePressable>
         </View>
       )}
 
-      <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
-        <TouchableOpacity style={[styles.btnSecondary, { backgroundColor: theme.btnSecondary }]} onPress={handleClearCache} activeOpacity={0.8}>
-          <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>{t('screens.settings.clearCache')}</Text>
-        </TouchableOpacity>
+      <View style={[styles.section, { backgroundColor: theme.bgCard }, SHADOWS.sm]}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="trash-outline" size={16} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+          <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('screens.settings.clearCache')}</Text>
+        </View>
+        <RipplePressable onPress={handleClearCache} accessibilityRole="button" accessibilityLabel={t('screens.settings.clearCache')}>
+          <View style={[styles.btnSecondary, { backgroundColor: theme.btnSecondary }]}>
+            <Text style={[styles.btnSecondaryText, { color: theme.btnSecondaryText }]}>{t('screens.settings.clearCache')}</Text>
+          </View>
+        </RipplePressable>
       </View>
 
       {isSignedIn && (
-        <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
-          <TouchableOpacity style={[styles.btnPrimary, { backgroundColor: theme.accent }]} onPress={handleSignOut} activeOpacity={0.8}>
-            <Text style={[styles.btnPrimaryText, { color: theme.accentText }]}>{t('screens.settings.signOut')}</Text>
-          </TouchableOpacity>
+        <View style={[styles.section, { backgroundColor: theme.bgCard }, SHADOWS.sm]}>
+          <RipplePressable onPress={handleSignOut} accessibilityRole="button" accessibilityLabel={t('screens.settings.signOut')}>
+            <View style={[styles.btnPrimary, { backgroundColor: theme.accent }]}>
+              <Ionicons name="log-out-outline" size={16} color={theme.accentText} style={{ marginRight: SPACING.sm }} />
+              <Text style={[styles.btnPrimaryText, { color: theme.accentText }]}>{t('screens.settings.signOut')}</Text>
+            </View>
+          </RipplePressable>
         </View>
       )}
 
-      <View style={[styles.section, { backgroundColor: theme.bgCard }]}>
-        <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('about.title')}</Text>
+      <View style={[styles.section, { backgroundColor: theme.bgCard }, SHADOWS.sm]}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="information-circle-outline" size={16} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+          <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('about.title')}</Text>
+        </View>
 
         <View style={[styles.aboutHeader, { borderBottomColor: theme.border }]}>
           <View style={[styles.aboutIconBox, { backgroundColor: theme.accent }]}>
             <Ionicons name="cloud-done" size={28} color="#ffffff" />
           </View>
-          <View style={{ flex: 1, marginLeft: 14 }}>
+          <View style={{ flex: 1, marginLeft: SPACING.md }}>
             <Text style={[styles.aboutAppName, { color: theme.text }]}>AWSight</Text>
             <View style={styles.aboutBadgeRow}>
               <View style={[styles.openSourceBadge, { backgroundColor: resolvedMode === 'dark' ? '#1a3a1a' : '#e8f5e9' }]}>
@@ -189,81 +241,100 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[styles.repoCard, { backgroundColor: theme.bgInput, borderColor: theme.border }]}
-          onPress={handleOpenRepo}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="code-slash" size={18} color={theme.accent} style={{ marginRight: 10 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.repoLabel, { color: theme.text }]} numberOfLines={1}>
-              {REPO_URL}
-            </Text>
-            <Text style={[styles.repoHint, { color: theme.textMuted }]}>
-              {t('about.tapToOpen')}
-            </Text>
+        <RipplePressable onPress={handleOpenRepo} accessibilityRole="link" accessibilityLabel={t('about.tapToOpen')}>
+          <View style={[styles.repoCard, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
+            <Ionicons name="code-slash" size={18} color={theme.accent} style={{ marginRight: SPACING.sm }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.repoLabel, { color: theme.text }]} numberOfLines={1}>
+                {REPO_URL}
+              </Text>
+              <Text style={[styles.repoHint, { color: theme.textMuted }]}>
+                {t('about.tapToOpen')}
+              </Text>
+            </View>
+            <Ionicons name="open-outline" size={16} color={theme.textMuted} />
           </View>
-          <Ionicons name="open-outline" size={16} color={theme.textMuted} />
-        </TouchableOpacity>
+        </RipplePressable>
       </View>
+
+      <View style={{ height: SPACING.huge }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 40 },
-  section: { marginBottom: 24, borderRadius: 14, padding: 16 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
-  value: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  hint: { fontSize: 12 },
+  content: { padding: SPACING.lg, paddingBottom: SPACING.huge },
+  section: {
+    marginBottom: SPACING.xl,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.xl,
+  },
+  sectionHeader: {
+    flexDirection: 'row', alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  sectionTitle: { ...TYPOGRAPHY.label },
+  value: { ...TYPOGRAPHY.h3, marginBottom: SPACING.xs },
+  hint: { ...TYPOGRAPHY.caption },
   themeRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 14, borderRadius: 10, borderWidth: 1.5, marginBottom: 8,
+    padding: SPACING.md, borderRadius: RADIUS.lg, borderWidth: 1.5, marginBottom: SPACING.sm,
   },
   themeInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  themeLabel: { fontSize: 15, fontWeight: '600' },
-  themeDesc: { fontSize: 12, marginTop: 2 },
+  themeLabel: { ...TYPOGRAPHY.bodyBold },
+  themeDesc: { ...TYPOGRAPHY.caption, marginTop: 2 },
   radio: {
     width: 24, height: 24, borderRadius: 12, borderWidth: 2,
     alignItems: 'center', justifyContent: 'center',
   },
-  btnPrimary: { borderRadius: 10, padding: 14, alignItems: 'center' },
-  btnPrimaryText: { fontSize: 15, fontWeight: '600' },
-  btnSecondary: { borderRadius: 10, padding: 14, alignItems: 'center' },
-  btnSecondaryText: { fontSize: 15, fontWeight: '600' },
+  btnPrimary: {
+    borderRadius: RADIUS.lg, padding: SPACING.md,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+  },
+  btnPrimaryText: { ...TYPOGRAPHY.button, fontSize: 15 },
+  btnDanger: {
+    borderRadius: RADIUS.lg, padding: SPACING.md,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+  },
+  btnDangerText: { ...TYPOGRAPHY.button, fontSize: 15 },
+  btnSecondary: {
+    borderRadius: RADIUS.lg, padding: SPACING.md,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+  },
+  btnSecondaryText: { ...TYPOGRAPHY.button, fontSize: 15 },
   aboutHeader: {
     flexDirection: 'row', alignItems: 'center',
-    paddingBottom: 16, marginBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: SPACING.lg, marginBottom: SPACING.md, borderBottomWidth: StyleSheet.hairlineWidth,
   },
   aboutIconBox: {
-    width: 52, height: 52, borderRadius: 14,
+    width: 52, height: 52, borderRadius: RADIUS.xl,
     alignItems: 'center', justifyContent: 'center',
   },
-  aboutAppName: { fontSize: 20, fontWeight: '800', marginBottom: 6, letterSpacing: -0.5 },
-  aboutBadgeRow: { flexDirection: 'row', alignItems: 'center' },
+  aboutAppName: { ...TYPOGRAPHY.h2, marginBottom: SPACING.xs },
+  aboutBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   openSourceBadge: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+    paddingHorizontal: SPACING.sm, paddingVertical: 3, borderRadius: RADIUS.xs,
   },
-  openSourceText: { fontSize: 10, fontWeight: '700', color: '#27ae60', marginLeft: 4 },
+  openSourceText: { ...TYPOGRAPHY.monoSm, fontWeight: '700', color: '#27ae60', marginLeft: 4 },
   versionBadge: {
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginLeft: 8,
+    paddingHorizontal: SPACING.sm, paddingVertical: 3, borderRadius: RADIUS.xs,
   },
-  versionBadgeText: { fontSize: 10, fontWeight: '700' },
+  versionBadgeText: { ...TYPOGRAPHY.monoSm, fontWeight: '700' },
   aboutBody: {},
   aboutRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(128,128,160,0.12)',
   },
   aboutRowIcon: { width: 28 },
-  aboutLabel: { fontSize: 13, fontWeight: '600', width: 70 },
-  aboutVal: { fontSize: 13, fontWeight: '500', flex: 1, textAlign: 'right' },
+  aboutLabel: { ...TYPOGRAPHY.caption, fontWeight: '600', width: 70 },
+  aboutVal: { ...TYPOGRAPHY.caption, fontWeight: '500', flex: 1, textAlign: 'right' },
   repoCard: {
     flexDirection: 'row', alignItems: 'center',
-    marginTop: 14, padding: 14, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth,
+    marginTop: SPACING.md, padding: SPACING.md, borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth,
   },
-  repoLabel: { fontSize: 12, fontFamily: 'monospace', marginBottom: 3 },
-  repoHint: { fontSize: 11 },
+  repoLabel: { ...TYPOGRAPHY.monoSm, marginBottom: 3 },
+  repoHint: { ...TYPOGRAPHY.caption, fontSize: 11 },
 });

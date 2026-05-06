@@ -3,7 +3,7 @@ import { FetchHttpHandler } from '@smithy/fetch-http-handler';
 import { useAuthStore } from '@/stores/authStore';
 import { Logger } from '@/utils/logger';
 
-const TAG = 'Auth';
+const TAG = '认证';
 
 export interface LoginParams {
   region: string;
@@ -30,18 +30,23 @@ export function validateLoginParams(params: LoginParams): string | null {
   const keyId = params.accessKeyId?.trim();
   const secret = params.secretAccessKey?.trim();
 
-  if (!region) return 'Region is required.';
-  if (!keyId) return 'Access Key ID is required.';
-  if (!keyId.startsWith('AKIA')) return 'Invalid Access Key ID format. Must start with AKIA.';
-  if (keyId.length < 20 || keyId.length > 24) return 'Access Key ID has invalid length.';
-  if (!secret) return 'Secret Access Key is required.';
-  if (secret.length < 16) return 'Secret Access Key too short. Must be at least 16 characters.';
+  if (!region) return '请输入 AWS 区域。';
+  if (!keyId) return '请输入访问密钥 ID。';
+  if (!keyId.startsWith('AKIA')) return '访问密钥 ID 格式无效，必须以 AKIA 开头。';
+  if (keyId.length < 20 || keyId.length > 24) return '访问密钥 ID 长度无效。';
+  if (!secret) return '请输入秘密访问密钥。';
+  if (secret.length < 16) return '秘密访问密钥太短，至少需要 16 个字符。';
+
+  const normalizedRegion = region.toLowerCase().trim();
+  if (!VALID_REGIONS.includes(normalizedRegion)) {
+    return `区域 "${region}" 不是有效的 AWS 区域。`;
+  }
 
   return null;
 }
 
 async function verifyCredentials(region: string, accessKeyId: string, secretAccessKey: string): Promise<void> {
-  Logger.info(TAG, 'Verifying credentials...', { region });
+  Logger.info(TAG, '正在验证凭证...', { region });
 
   const client = new CloudWatchLogsClient({
     region,
@@ -51,7 +56,7 @@ async function verifyCredentials(region: string, accessKeyId: string, secretAcce
 
   await client.send(new DescribeLogGroupsCommand({ limit: 1 }));
 
-  Logger.info(TAG, 'Credentials verified OK');
+  Logger.info(TAG, '凭证验证通过');
 }
 
 export async function signInWithAws(params: LoginParams): Promise<void> {
@@ -59,24 +64,16 @@ export async function signInWithAws(params: LoginParams): Promise<void> {
   const keyId = params.accessKeyId?.trim();
   const secret = params.secretAccessKey?.trim();
 
-  Logger.debug(TAG, 'RAW CREDENTIALS (debug only)', {
+  Logger.info(TAG, '登录流程开始', {
     region,
-    accessKeyId: keyId,
-    accessKeyId_length: keyId?.length,
-    secretAccessKey: secret,
-    secretAccessKey_length: secret?.length,
-  });
-
-  Logger.info(TAG, 'signInWithAws started', {
-    region,
-    keyStart: keyId?.substring(0, 8),
+    keyStart: keyId?.substring(0, 8) + '****',
     keyLength: keyId?.length,
     secretLength: secret?.length,
   });
 
   const validationError = validateLoginParams(params);
   if (validationError) {
-    Logger.warn(TAG, 'Validation failed', { error: validationError });
+    Logger.warn(TAG, '参数验证失败', { error: validationError });
     throw new Error(validationError);
   }
 
@@ -85,36 +82,43 @@ export async function signInWithAws(params: LoginParams): Promise<void> {
   try {
     await verifyCredentials(region, keyId, secret);
   } catch (e: any) {
-    const code = e?.name || 'UnknownError';
+    const code = e?.name || '未知错误';
     const message = e?.message || '';
-    Logger.error(TAG, 'Credential verification failed', { code, message });
 
+    Logger.error(TAG, '凭证验证失败', { code, message });
+
+    if (code === 'InvalidSignatureException' || code === 'SignatureDoesNotMatch') {
+      throw new Error('秘密访问密钥不正确。请检查后重试。');
+    }
+    if (code === 'InvalidClientTokenId' || code === 'AccessDenied' || code === 'AccessDeniedException') {
+      throw new Error('访问密钥 ID 无效或权限不足。');
+    }
     if (code === 'UnrecognizedClientException') {
-      throw new Error('Invalid credentials. The Access Key ID or Secret Access Key is incorrect, or this key has been deleted/inactivated.');
+      throw new Error('无效的访问密钥 ID。请检查格式是否正确。');
     }
-    if (code === 'AccessDeniedException' || code === 'AccessDenied') {
-      throw new Error('Access denied. Your IAM user lacks logs:DescribeLogGroups permission.');
+    if (message.includes('Endpoint') || message.includes('region') || message.includes('Could not resolve')) {
+      throw new Error('无法连接到 AWS API。请检查区域设置和网络连接。');
     }
-    if (message.includes('InvalidClientTokenId')) {
-      throw new Error('The Access Key ID does not exist.');
+    if (code === 'NetworkingError' || code === 'TimeoutError' || message.includes('timeout')) {
+      throw new Error('网络连接失败或请求超时，请检查网络后重试。');
     }
-    if (message.includes('SignatureDoesNotMatch') || message.includes('security token')) {
-      throw new Error('The Secret Access Key is incorrect.');
+    if (code === 'ThrottlingException') {
+      throw new Error('请求过于频繁，请稍等片刻后重试。');
     }
+    if (code === 'ServiceUnavailable') {
+      throw new Error('AWS 服务暂不可用，请稍后重试。');
+    }
+
     throw new Error(`${code}: ${message}`);
   }
 
-  const now = Date.now();
+  const { credentials } = useAuthStore.getState();
+  if (!credentials) throw new Error('凭证设置失败');
 
-  useAuthStore.getState().setCredentials({
-    accessKeyId: keyId,
-    secretAccessKey: secret,
-    expiresAt: now + CREDENTIAL_EXPIRY_MS,
-  });
-
+  useAuthStore.getState().setCredentials(credentials);
   useAuthStore.getState().setRegion(region);
 
-  Logger.info(TAG, 'Login complete', {
+  Logger.info(TAG, '登录完成', {
     region,
     keyId: keyId.substring(0, 8) + '****',
   });
@@ -122,7 +126,7 @@ export async function signInWithAws(params: LoginParams): Promise<void> {
 
 export function signOut() {
   const { credentials, region } = useAuthStore.getState();
-  Logger.info(TAG, 'Signing out', { region, hadCredentials: !!credentials });
+  Logger.info(TAG, '正在退出登录', { region, hadCredentials: !!credentials });
   useAuthStore.getState().signOut();
 }
 
@@ -131,7 +135,7 @@ export function checkCredentialExpiry(): boolean {
   if (!isSignedIn || !credentials) return false;
 
   if (credentials.expiresAt && Date.now() > credentials.expiresAt) {
-    Logger.info(TAG, 'Credentials expired, auto sign-out');
+    Logger.info(TAG, '凭证已过期，自动退出登录');
     signOut();
     return true;
   }

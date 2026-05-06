@@ -4,22 +4,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { encryptSecret, decryptSecret } from '@/utils/crypto';
 import { Logger } from '@/utils/logger';
 
-const TAG = 'AccountsStore';
+const TAG = '账户管理';
 
 export interface StoredAccount {
-  id: string;
-  alias: string;
-  region: string;
-  accessKeyId: string;
-  secretAccessKeyEncrypted: string;
-  createdAt: number;
+  id: string; alias: string; region: string; accessKeyId: string;
+  secretAccessKeyEncrypted: string; createdAt: number;
 }
 
 export interface AccountFormData {
-  alias: string;
-  region: string;
-  accessKeyId: string;
-  secretAccessKey: string;
+  alias: string; region: string; accessKeyId: string; secretAccessKey: string;
 }
 
 export interface AccountsState {
@@ -44,39 +37,23 @@ export const useAccountsStore = create<AccountsState>()(
       addAccount: (data) => {
         const id = generateId();
         const account: StoredAccount = {
-          id,
-          alias: data.alias.trim() || `Account ${get().accounts.length + 1}`,
-          region: data.region.trim(),
-          accessKeyId: data.accessKeyId.trim(),
+          id, alias: data.alias.trim() || `账户 ${get().accounts.length + 1}`,
+          region: data.region.trim(), accessKeyId: data.accessKeyId.trim(),
           secretAccessKeyEncrypted: encryptSecret(data.secretAccessKey),
           createdAt: Date.now(),
         };
-        Logger.info(TAG, 'Account added', { id, region: account.region, alias: account.alias });
+        Logger.info(TAG, '账户已添加', { id, region: account.region, alias: account.alias });
         set({ accounts: [...get().accounts, account] });
         return id;
       },
 
       updateAccount: (id, data) => {
-        Logger.info(TAG, 'Account updated', { id });
-        set({
-          accounts: get().accounts.map((a) =>
-            a.id === id
-              ? {
-                  ...a,
-                  alias: data.alias.trim() || a.alias,
-                  region: data.region.trim(),
-                  accessKeyId: data.accessKeyId.trim(),
-                  secretAccessKeyEncrypted: data.secretAccessKey
-                    ? encryptSecret(data.secretAccessKey)
-                    : a.secretAccessKeyEncrypted,
-                }
-              : a,
-          ),
-        });
+        Logger.info(TAG, '账户已更新', { id });
+        set({ accounts: get().accounts.map((a) => a.id === id ? { ...a, alias: data.alias.trim() || a.alias, region: data.region.trim(), accessKeyId: data.accessKeyId.trim(), secretAccessKeyEncrypted: data.secretAccessKey ? encryptSecret(data.secretAccessKey) : a.secretAccessKeyEncrypted } : a) });
       },
 
       removeAccount: (id) => {
-        Logger.info(TAG, 'Account removed', { id });
+        Logger.info(TAG, '账户已删除', { id });
         set({ accounts: get().accounts.filter((a) => a.id !== id) });
       },
 
@@ -89,18 +66,14 @@ export const useAccountsStore = create<AccountsState>()(
     {
       name: 'awsight-accounts',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        accounts: state.accounts,
-      }),
+      partialize: (state) => ({ accounts: state.accounts }),
       onRehydrateStorage: () => {
-        Logger.debug(TAG, 'Accounts store rehydrating');
+        Logger.debug(TAG, '账户数据恢复中');
         return (state, error) => {
           if (error) {
-            Logger.logError(TAG, 'Accounts store rehydration failed', error);
+            Logger.logError(TAG, '账户数据恢复失败', error);
           } else {
-            Logger.info(TAG, 'Accounts store rehydrated', {
-              count: state?.accounts?.length || 0,
-            });
+            Logger.info(TAG, '账户数据已恢复', { count: state?.accounts?.length || 0 });
           }
         };
       },

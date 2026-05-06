@@ -1,9 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  ElasticLoadBalancingV2Client,
-  DescribeLoadBalancersCommand,
-  LoadBalancer,
-} from '@aws-sdk/client-elastic-load-balancing-v2';
+import { ElasticLoadBalancingV2Client, DescribeLoadBalancersCommand, LoadBalancer } from '@aws-sdk/client-elastic-load-balancing-v2';
 import { createELBClient } from '@/services/aws/client';
 import { Logger } from '@/utils/logger';
 
@@ -22,15 +18,14 @@ export function useLoadBalancers() {
           if (res.LoadBalancers) lbs.push(...res.LoadBalancers);
           marker = res.NextMarker;
         } while (marker);
-        Logger.info(TAG, `Fetched ${lbs.length} Load Balancers`);
+        Logger.info(TAG, `获取到 ${lbs.length} 个负载均衡器`);
         return lbs;
       } catch (e: any) {
-        Logger.logError(TAG, 'DescribeLoadBalancers failed', e);
+        Logger.logError(TAG, '获取负载均衡器列表失败', e);
         throw e;
       }
     },
-    staleTime: 30000,
-    retry: 2,
+    staleTime: 30000, retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }

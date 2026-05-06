@@ -13,19 +13,19 @@ import { useAuthStore } from '@/stores/authStore';
 import { checkCredentialExpiry } from '@/services/auth/auth';
 import { Logger } from '@/utils/logger';
 
-const TAG = 'AWSClient';
+const TAG = 'AWS客户端';
 
-function createAwsConfig(region?: string) {
+export function createAwsConfigForService() {
   const expired = checkCredentialExpiry();
   if (expired) {
-    Logger.warn(TAG, 'Credentials expired on client creation');
-    throw new Error('Session expired. Please sign in again.');
+    Logger.warn(TAG, '凭证已过期，无法创建客户端');
+    throw new Error('会话已过期。请重新登录。');
   }
 
   const { credentials } = useAuthStore.getState();
   if (!credentials) {
-    Logger.error(TAG, 'No credentials available');
-    throw new Error('Not authenticated. Please sign in first.');
+    Logger.error(TAG, '没有可用凭证');
+    throw new Error('未登录。请先登录。');
   }
 
   const creds = {
@@ -34,17 +34,21 @@ function createAwsConfig(region?: string) {
     ...(credentials.sessionToken ? { sessionToken: credentials.sessionToken } : {}),
   };
 
-  Logger.debug(TAG, 'Creating client', {
-    region: region || useAuthStore.getState().region,
-    accessKeyId: credentials.accessKeyId.substring(0, 8) + '****',
+  Logger.debug(TAG, '正在创建客户端', {
+    region: useAuthStore.getState().region,
+    accessKeyId: (credentials.accessKeyId || '').substring(0, 8) + '****',
     hasSessionToken: !!credentials.sessionToken,
   });
 
   return {
-    region: region || useAuthStore.getState().region,
+    region: useAuthStore.getState().region,
     credentials: creds,
     requestHandler: new FetchHttpHandler(),
   };
+}
+
+function createAwsConfig(region?: string) {
+  return createAwsConfigForService();
 }
 
 export function createCloudWatchLogsClient(region?: string): CloudWatchLogsClient {

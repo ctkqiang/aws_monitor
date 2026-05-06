@@ -119,7 +119,7 @@ export default function MainTabs() {
         <View style={styles.headerContent}>
           <TouchableOpacity
             onPress={() => {
-              Logger.info(TAG, 'CloudWatch overview opened');
+              Logger.info(TAG, 'CloudWatch 概览已打开');
               setShowCloudWatchModal(true);
             }}
             activeOpacity={0.7}
@@ -191,7 +191,7 @@ export default function MainTabs() {
               key={tab.key}
               style={styles.tab}
               onPress={() => {
-                Logger.info(TAG, 'Tab switched', { from: activeTab, to: tab.key });
+                Logger.info(TAG, '标签页已切换', { from: activeTab, to: tab.key });
                 setActiveTab(tab.key);
               }}
               onLayout={(e) => {

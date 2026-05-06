@@ -16,13 +16,15 @@ import RipplePressable from '@/components/RipplePressable';
 const TAG = 'AccountManagement';
 
 const COMMON_REGIONS = [
-  'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
+  'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'ca-central-1',
+  'sa-east-1',
+  'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-central-1', 'eu-central-2',
+  'eu-north-1', 'eu-south-1', 'eu-south-2',
   'ap-northeast-1', 'ap-northeast-2', 'ap-northeast-3',
-  'ap-south-1', 'ap-southeast-1', 'ap-southeast-2',
-  'eu-west-1', 'eu-west-2', 'eu-west-3',
-  'eu-central-1', 'eu-north-1',
-  'ca-central-1', 'sa-east-1',
-  'me-south-1', 'af-south-1',
+  'ap-south-1', 'ap-south-2',
+  'ap-southeast-1', 'ap-southeast-2', 'ap-southeast-3', 'ap-southeast-4', 'ap-southeast-5',
+  'ap-east-1',
+  'me-south-1', 'me-central-1', 'af-south-1',
 ];
 
 interface Props {
@@ -82,17 +84,17 @@ export default function AccountManagementScreen({ onBack, onSelect }: Props) {
     try {
       if (editingId) {
         updateAccount(editingId, formData);
-        Logger.info(TAG, 'Account updated', { id: editingId });
+        Logger.info(TAG, '账户已更新', { id: editingId });
         Alert.alert('', t('accounts.saved') || 'Account updated successfully');
       } else {
         addAccount(formData);
-        Logger.info(TAG, 'Account created');
+        Logger.info(TAG, '账户已创建');
         Alert.alert('', t('accounts.created') || 'Account saved successfully');
       }
       setShowForm(false);
       resetForm();
     } catch (e: any) {
-      Logger.logError(TAG, 'Save failed', e);
+      Logger.logError(TAG, '保存失败', e);
       Alert.alert(t('common.error'), e?.message || 'Failed to save account');
     } finally {
       setSaving(false);
@@ -131,7 +133,7 @@ export default function AccountManagementScreen({ onBack, onSelect }: Props) {
 
   const handleSelect = (account: StoredAccount) => {
     const secret = getDecryptedSecret(account.id);
-    Logger.info(TAG, 'Account selected for login', { id: account.id });
+    Logger.info(TAG, '已选择账户用于登录', { id: account.id });
     onSelect?.({
       region: account.region,
       accessKeyId: account.accessKeyId,
@@ -347,7 +349,7 @@ export default function AccountManagementScreen({ onBack, onSelect }: Props) {
         <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowRegionPicker(false)}>
           <View style={[styles.pickerModal, { backgroundColor: theme.bgCard }, SHADOWS.xl]}>
             <View style={[styles.pickerHeader, { borderBottomColor: theme.border }]}>
-              <Text style={[styles.pickerTitle, { color: theme.text }]}>Select Region</Text>
+              <Text style={[styles.pickerTitle, { color: theme.text }]}>{t('regions.selectRegion')}</Text>
               <RipplePressable onPress={() => setShowRegionPicker(false)}>
                 <Ionicons name="close" size={22} color={theme.textMuted} />
               </RipplePressable>
@@ -356,7 +358,7 @@ export default function AccountManagementScreen({ onBack, onSelect }: Props) {
               style={[styles.input, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border, margin: SPACING.md }]}
               value={regionFilter}
               onChangeText={setRegionFilter}
-              placeholder="Search or type custom region..."
+              placeholder={t('common.search')}
               placeholderTextColor={theme.placeholder}
               autoCorrect={false}
             />
@@ -373,7 +375,12 @@ export default function AccountManagementScreen({ onBack, onSelect }: Props) {
                   activeOpacity={0.6}
                 >
                   <Ionicons name={formData.region === r ? 'radio-button-on' : 'radio-button-off'} size={18} color={theme.accent} style={{ marginRight: SPACING.md }} />
-                  <Text style={[styles.regionText, { color: theme.text }]}>{r}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.regionText, { color: theme.text }]}>
+                      {t(`regions.${r}`, r)}
+                    </Text>
+                    <Text style={[styles.regionCode, { color: theme.textMuted }]}>{r}</Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -500,4 +507,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   regionText: { ...TYPOGRAPHY.body, flex: 1 },
+  regionCode: { ...TYPOGRAPHY.monoSm, marginTop: 2 },
 });

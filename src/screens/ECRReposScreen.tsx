@@ -187,7 +187,7 @@ export default function ECRReposScreen() {
   }
 
   const handleTap = (repoName: string) => {
-    Logger.info(TAG, 'Repository tapped', {
+    Logger.info(TAG, '仓库已点击', {
       repo: repoName,
     });
     setSelectedRepo(repoName);

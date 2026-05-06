@@ -290,7 +290,7 @@ export default function ECSServicesScreen() {
     <TouchableOpacity
       style={[styles.row, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
       onPress={() => {
-        Logger.info('ECS', 'Cluster tapped', { arn: item });
+        Logger.info('ECS', '集群已点击', { arn: item });
         setSelectedCluster(item);
       }}
       activeOpacity={0.6}
@@ -308,7 +308,7 @@ export default function ECSServicesScreen() {
     <TouchableOpacity
       style={[styles.svcCard, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
       onPress={() => {
-        Logger.info('ECS', 'Service tapped', { name: item.serviceName, arn: item.serviceArn });
+        Logger.info('ECS', '服务已点击', { name: item.serviceName, arn: item.serviceArn });
         setSelectedService(item);
       }}
       activeOpacity={0.6}

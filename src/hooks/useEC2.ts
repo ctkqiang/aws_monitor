@@ -1,8 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-  EC2Client,
-  DescribeSecurityGroupsCommand,
-  SecurityGroup,
+  EC2Client, DescribeSecurityGroupsCommand, SecurityGroup,
 } from '@aws-sdk/client-ec2';
 import { createEC2Client } from '@/services/aws/client';
 import { Logger } from '@/utils/logger';
@@ -22,15 +20,14 @@ export function useSecurityGroups() {
           if (res.SecurityGroups) sgs.push(...res.SecurityGroups);
           nextToken = res.NextToken;
         } while (nextToken);
-        Logger.info(TAG, `Fetched ${sgs.length} Security Groups`);
+        Logger.info(TAG, `获取到 ${sgs.length} 个安全组`);
         return sgs;
       } catch (e: any) {
-        Logger.logError(TAG, 'DescribeSecurityGroups failed', e);
+        Logger.logError(TAG, '获取安全组列表失败', e);
         throw e;
       }
     },
-    staleTime: 30000,
-    retry: 2,
+    staleTime: 30000, retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }

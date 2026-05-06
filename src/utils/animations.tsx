@@ -5,6 +5,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  View,
   ViewStyle,
 } from 'react-native';
 
@@ -313,4 +314,64 @@ export function useShimmer() {
     inputRange: [0, 1],
     outputRange: [0.3, 1],
   });
+}
+
+export function SkeletonBlock({ width, height, style }: { width?: number; height: number; style?: ViewStyle }) {
+  const opacity = useShimmer();
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width: width ?? '100%' as any,
+          height,
+          borderRadius: 8,
+          backgroundColor: '#ccc',
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+}
+
+export function SkeletonCard({ style }: { style?: ViewStyle }) {
+  const opacity = useShimmer();
+
+  return (
+    <Animated.View
+      style={[
+        {
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: 'rgba(128,128,160,0.1)',
+          padding: 16,
+          marginBottom: 8,
+          overflow: 'hidden',
+          opacity,
+          backgroundColor: 'rgba(128,128,160,0.06)',
+        },
+        style,
+      ]}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+        <Animated.View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: 'rgba(128,128,160,0.15)', marginRight: 10, opacity }} />
+        <Animated.View style={{ height: 14, borderRadius: 6, backgroundColor: 'rgba(128,128,160,0.15)', flex: 1, opacity }} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Animated.View style={{ height: 10, borderRadius: 5, backgroundColor: 'rgba(128,128,160,0.10)', flex: 0.4, opacity }} />
+        <Animated.View style={{ height: 10, borderRadius: 5, backgroundColor: 'rgba(128,128,160,0.10)', flex: 0.3, opacity }} />
+      </View>
+    </Animated.View>
+  );
+}
+
+export function SkeletonList({ count = 5 }: { count?: number }) {
+  return (
+    <View style={{ padding: 12 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </View>
+  );
 }

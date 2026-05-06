@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Logger } from '@/utils/logger';
-import { RADIUS, SPACING, TYPOGRAPHY } from '@/theme/ThemeContext';
+import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 
 interface Props {
   children: React.ReactNode;
@@ -25,7 +25,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    Logger.error('ErrorBoundary', 'Uncaught error', {
+    Logger.error('错误边界', '未捕获的异常', {
       message: error.message,
       stack: error.stack?.substring(0, 500),
       componentStack: info.componentStack?.substring(0, 500),
@@ -40,21 +40,28 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <SafeAreaView style={styles.container}>
-          <View style={styles.iconBox}>
-            <Ionicons name="alert-circle" size={48} color="#FF9900" />
+          <View style={styles.card}>
+            <View style={styles.iconBox}>
+              <Ionicons name="alert-circle" size={48} color="#FF9900" />
+            </View>
+            <Text style={styles.title}>Something went wrong</Text>
+            <Text style={styles.message}>
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </Text>
+            <Text style={styles.hint}>
+              The app will attempt to recover. If the problem persists, try restarting.
+            </Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={this.handleReset}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
+            >
+              <Ionicons name="refresh" size={18} color="#1a1a2e" style={{ marginRight: SPACING.sm }} />
+              <Text style={styles.buttonText}>Try Again</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.message}>{this.state.error?.message || 'An unexpected error occurred'}</Text>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={this.handleReset}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Try again"
-          >
-            <Ionicons name="refresh" size={18} color="#1a1a2e" style={{ marginRight: SPACING.sm }} />
-            <Text style={styles.buttonText}>Try Again</Text>
-          </TouchableOpacity>
         </SafeAreaView>
       );
     }
@@ -70,6 +77,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#0f0f1a',
     padding: SPACING.xxxl,
+  },
+  card: {
+    alignItems: 'center',
+    maxWidth: 320,
+    padding: SPACING.xxxl,
+    borderRadius: RADIUS.xxl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,153,0,0.2)',
+    backgroundColor: 'rgba(26,26,46,0.8)',
+    ...SHADOWS.xl,
   },
   iconBox: {
     width: 88,
@@ -90,8 +107,14 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body,
     color: '#a0a0b8',
     textAlign: 'center',
-    marginBottom: SPACING.xxxl,
+    marginBottom: SPACING.lg,
     lineHeight: 21,
+  },
+  hint: {
+    ...TYPOGRAPHY.caption,
+    color: '#6b6b80',
+    textAlign: 'center',
+    marginBottom: SPACING.xxl,
   },
   button: {
     flexDirection: 'row',
@@ -102,6 +125,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xxxl,
     paddingVertical: SPACING.lg,
     minWidth: 180,
+    ...SHADOWS.md,
   },
   buttonText: {
     ...TYPOGRAPHY.button,

@@ -148,7 +148,7 @@ export const Logger = {
   timeEnd: (label: string, tag: string, context?: string) => {
     const start = timers.get(label);
     if (start === undefined) {
-      Logger.warn('Logger', `Timer "${label}" does not exist`);
+      Logger.warn('Logger', `计时器 "${label}" 不存在`);
       return;
     }
     timers.delete(label);
@@ -161,10 +161,10 @@ export const Logger = {
     Logger.time(label);
     try {
       const result = await fn();
-      Logger.timeEnd(label, tag, `${label} completed`);
+      Logger.timeEnd(label, tag, `${label} 完成`);
       return result;
     } catch (err) {
-      Logger.timeEnd(label, tag, `${label} failed`);
+      Logger.timeEnd(label, tag, `${label} 失败`);
       throw err;
     }
   },

@@ -1,63 +1,53 @@
 import { useQuery } from '@tanstack/react-query';
-import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
-import { FetchHttpHandler } from '@smithy/fetch-http-handler';
-import { useAuthStore } from '@/stores/authStore';
+import { IAMClient, GetUserCommand } from '@aws-sdk/client-iam';
+import { STSClient, GetCallerIdentityCommand as STSGetCallerIdentity } from '@aws-sdk/client-sts';
+import { createAwsConfigForService } from '@/services/aws/client';
 import { Logger } from '@/utils/logger';
 
 const TAG = 'IAM';
 
-export function useCurrentUser() {
-  const { credentials, region } = useAuthStore.getState();
+interface IamUser {
+  username: string;
+  status: string;
+  accountId: string;
+  arn: string;
+}
 
-  return useQuery<{ username: string; arn: string; accountId: string; status: 'active' | 'inactive' }>({
-    queryKey: ['iam-user'],
-    queryFn: async () => {
-      if (!credentials) throw new Error('Not authenticated');
+async function resolveUser(): Promise<IamUser> {
+  const config = createAwsConfigForService();
+  try {
+    const sts = new STSClient(config);
+    const stsRes = await sts.send(new STSGetCallerIdentity({}));
+    const arn = stsRes.Arn || '';
+    const accountId = stsRes.Account || '';
 
-      const client = new STSClient({
-        region: region || 'us-east-1',
-        credentials: {
-          accessKeyId: credentials.accessKeyId,
-          secretAccessKey: credentials.secretAccessKey,
-        },
-        requestHandler: new FetchHttpHandler(),
-      });
+    let username = arn.split('/').pop() || arn.split(':').pop() || 'AWS User';
+    let status = 'active';
 
-      let username = 'Unknown';
-      let arn = '';
-      let accountId = '';
-      let status: 'active' | 'inactive' = 'inactive';
-
-      try {
-        const idRes = await client.send(new GetCallerIdentityCommand({}));
-        arn = idRes.Arn || '';
-        accountId = idRes.Account || '';
-
-        const arnParts = arn.split(':');
-        const resourceInfo = arnParts[5] || '';
-        const slashParts = resourceInfo.split('/');
-
-        if (slashParts.length >= 2) {
-          username = slashParts[1];
-        } else if (arn.toLowerCase().startsWith('arn:aws:sts::') && slashParts[0] === 'assumed-role') {
-          username = slashParts[1] || 'Unknown';
-        } else if (arn.toLowerCase().includes(':user/')) {
-          username = arn.split('/').pop() || 'Unknown';
-        }
-
-        status = 'active';
-      } catch (e: any) {
-        Logger.warn(TAG, 'GetCallerIdentity failed', { error: e.message });
-        status = 'active';
-        username = 'AWSUser';
+    try {
+      const iam = new IAMClient(config);
+      const userRes = await iam.send(new GetUserCommand({}));
+      username = userRes.User?.UserName || username;
+      status = 'active';
+    } catch (e: any) {
+      if (e?.name === 'AccessDenied' || e?.name === 'AccessDeniedException') {
+        Logger.warn(TAG, '获取 IAM 用户信息失败', { error: e.message });
       }
+    }
 
-      Logger.info(TAG, 'User resolved', { username, status, accountId });
+    Logger.info(TAG, '用户信息已解析', { username, status, accountId });
+    return { username, status, accountId, arn };
+  } catch (e: any) {
+    Logger.warn(TAG, '获取 STS 身份信息失败', { error: e.message });
+    return { username: 'AWS User', status: 'unknown', accountId: '', arn: '' };
+  }
+}
 
-      return { username, arn, accountId, status };
-    },
-    enabled: !!credentials,
-    staleTime: 60000,
-    retry: false,
+export function useCurrentUser() {
+  return useQuery<IamUser>({
+    queryKey: ['iam-user'],
+    queryFn: resolveUser,
+    staleTime: 300000,
+    retry: 1,
   });
 }

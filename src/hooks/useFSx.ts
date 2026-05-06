@@ -1,9 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  FSxClient,
-  DescribeFileSystemsCommand,
-  FileSystem,
-} from '@aws-sdk/client-fsx';
+import { FSxClient, DescribeFileSystemsCommand, FileSystem } from '@aws-sdk/client-fsx';
 import { createFSxClient } from '@/services/aws/client';
 import { Logger } from '@/utils/logger';
 
@@ -23,15 +19,14 @@ export function useFSxFileSystems() {
           nextToken = res.NextToken;
         } while (nextToken);
         const ontap = systems.filter((fs) => fs.FileSystemType === 'ONTAP');
-        Logger.info(TAG, `Fetched ${systems.length} FSx file systems (${ontap.length} ONTAP)`);
+        Logger.info(TAG, `获取到 ${systems.length} 个 FSx 文件系统（${ontap.length} 个 ONTAP）`);
         return systems;
       } catch (e: any) {
-        Logger.logError(TAG, 'DescribeFileSystems failed', e);
+        Logger.logError(TAG, '获取 FSx 文件系统列表失败', e);
         throw e;
       }
     },
-    staleTime: 30000,
-    retry: 2,
+    staleTime: 30000, retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }

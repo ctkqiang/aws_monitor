@@ -353,7 +353,7 @@ export default function S3Screen() {
   }
 
   const handleTap = (bucketName: string) => {
-    Logger.info(TAG, 'Bucket tapped', { bucket: bucketName });
+    Logger.info(TAG, 'Bucket 已点击', { bucket: bucketName });
     setSelectedBucket(bucketName);
   };
 
