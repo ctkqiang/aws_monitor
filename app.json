@@ -4,27 +4,27 @@
     "slug": "awsight",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/applogo.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#1a1a2e",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/applogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#1a1a2e"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.awsaudit.awsight"
+      "bundleIdentifier": "cn.ctkqiang.awsight"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/applogo.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "com.awsaudit.awsight"
+      "package": "cn.ctkqiang.awsight"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/applogo.png"
     },
     "extra": {
       "eas": {

@@ -21,12 +21,13 @@ const TAG = 'Resources';
 
 type ResourceTab = 'rds' | 'elasticache' | 'lb' | 'sg' | 's3';
 
-const TABS: { key: ResourceTab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: 'rds', label: 'RDS', icon: 'server' },
-  { key: 'elasticache', label: 'ElastiCache', icon: 'flash' },
-  { key: 'lb', label: 'Load Balancers', icon: 'git-network' },
-  { key: 'sg', label: 'Security Groups', icon: 'shield-checkmark' },
-  { key: 's3', label: 'S3', icon: 'cloud' },
+type TabDef = { key: ResourceTab; labelKey: string; icon: keyof typeof Ionicons.glyphMap };
+const TAB_DEFS: TabDef[] = [
+  { key: 'rds', labelKey: 'RDS', icon: 'server' },
+  { key: 'elasticache', labelKey: 'ElastiCache', icon: 'flash' },
+  { key: 'lb', labelKey: 'Load Balancers', icon: 'git-network' },
+  { key: 'sg', labelKey: 'Security Groups', icon: 'shield-checkmark' },
+  { key: 's3', labelKey: 'S3', icon: 'cloud' },
 ];
 
 function ResourceCard({
@@ -223,7 +224,7 @@ export default function ResourcesScreen() {
         style={[styles.tabScroll, { backgroundColor: theme.bgCard, borderBottomColor: theme.border }]}
         contentContainerStyle={styles.tabContainer}
       >
-        {TABS.map((tab) => {
+        {TAB_DEFS.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
             <TouchableOpacity
@@ -240,7 +241,7 @@ export default function ResourcesScreen() {
             >
               <Ionicons name={tab.icon} size={14} color={isActive ? theme.accent : theme.textMuted} style={{ marginRight: SPACING.xs }} />
               <Text style={[styles.tabText, { color: isActive ? theme.accent : theme.textMuted }]}>
-                {tab.label}
+                {tab.labelKey}
               </Text>
             </TouchableOpacity>
           );
