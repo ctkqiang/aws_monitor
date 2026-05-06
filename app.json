@@ -14,14 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "cn.ctkqiang.awsight"
+      "bundleIdentifier": "xin.ctkqiang.awsight"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/applogo.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "cn.ctkqiang.awsight"
+      "package": "xin.ctkqiang.awsight"
     },
     "web": {
       "favicon": "./assets/applogo.png"

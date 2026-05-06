@@ -151,6 +151,58 @@ export default function LoginScreen() {
     }
   }, [touched]);
 
+  const handleSelectAccount = useCallback((account: StoredAccount) => {
+    const secret = getDecryptedSecret(account.id);
+    setRegion(account.region);
+    setAccessKeyId(account.accessKeyId);
+    setSecretAccessKey(secret);
+    setErrors({});
+    setTouched({});
+    Logger.info(TAG, '快速切换账户', { id: account.id, region: account.region });
+  }, [getDecryptedSecret]);
+
+  const handleForgotCredentials = useCallback(() => {
+    Linking.openURL(IAM_CREDENTIAL_HELP_URL).catch(() => {
+      Alert.alert('', '无法打开链接');
+    });
+  }, []);
+
+  const renderAccountCard = useCallback((account: StoredAccount) => {
+    const maskedKey = account.accessKeyId.substring(0, 8) + '••••' + account.accessKeyId.substring(account.accessKeyId.length - 4);
+    const isActive = region === account.region && accessKeyId === account.accessKeyId;
+
+    return (
+      <RipplePressable key={account.id} onPress={() => handleSelectAccount(account)}>
+        <View style={[
+          styles.accountCard,
+          { backgroundColor: isActive ? theme.accentLight : theme.bgCard, borderColor: isActive ? theme.accent : theme.border },
+          SHADOWS.sm,
+        ]}>
+          <View style={styles.accountCardLeft}>
+            <View style={[styles.accountAvatar, { backgroundColor: isActive ? theme.accent : theme.textMuted }]}>
+              <Text style={styles.accountAvatarText}>{account.alias.charAt(0).toUpperCase()}</Text>
+            </View>
+            <View style={styles.accountCardInfo}>
+              <Text style={[styles.accountCardName, { color: theme.text }]} numberOfLines={1}>{account.alias}</Text>
+              <View style={styles.accountCardMeta}>
+                <View style={[styles.accountRegionChip, { backgroundColor: theme.bgInput }]}>
+                  <Ionicons name="globe-outline" size={10} color={theme.textMuted} style={{ marginRight: 3 }} />
+                  <Text style={[styles.accountRegionText, { color: theme.textMuted }]}>{account.region}</Text>
+                </View>
+                <Text style={[styles.accountKeyText, { color: theme.textMuted }]}>{maskedKey}</Text>
+              </View>
+            </View>
+          </View>
+          {isActive && (
+            <View style={styles.accountActiveBadge}>
+              <Ionicons name="checkmark-circle" size={18} color={theme.accent} />
+            </View>
+          )}
+        </View>
+      </RipplePressable>
+    );
+  }, [region, accessKeyId, theme, handleSelectAccount]);
+
   if (showAccounts) {
     return (
       <AccountManagementScreen
@@ -214,58 +266,6 @@ export default function LoginScreen() {
       }, 300);
     }
   };
-
-  const handleSelectAccount = useCallback((account: StoredAccount) => {
-    const secret = getDecryptedSecret(account.id);
-    setRegion(account.region);
-    setAccessKeyId(account.accessKeyId);
-    setSecretAccessKey(secret);
-    setErrors({});
-    setTouched({});
-    Logger.info(TAG, '快速切换账户', { id: account.id, region: account.region });
-  }, [getDecryptedSecret]);
-
-  const handleForgotCredentials = useCallback(() => {
-    Linking.openURL(IAM_CREDENTIAL_HELP_URL).catch(() => {
-      Alert.alert('', '无法打开链接');
-    });
-  }, []);
-
-  const renderAccountCard = useCallback((account: StoredAccount) => {
-    const maskedKey = account.accessKeyId.substring(0, 8) + '••••' + account.accessKeyId.substring(account.accessKeyId.length - 4);
-    const isActive = region === account.region && accessKeyId === account.accessKeyId;
-
-    return (
-      <RipplePressable key={account.id} onPress={() => handleSelectAccount(account)}>
-        <View style={[
-          styles.accountCard,
-          { backgroundColor: isActive ? theme.accentLight : theme.bgCard, borderColor: isActive ? theme.accent : theme.border },
-          SHADOWS.sm,
-        ]}>
-          <View style={styles.accountCardLeft}>
-            <View style={[styles.accountAvatar, { backgroundColor: isActive ? theme.accent : theme.textMuted }]}>
-              <Text style={styles.accountAvatarText}>{account.alias.charAt(0).toUpperCase()}</Text>
-            </View>
-            <View style={styles.accountCardInfo}>
-              <Text style={[styles.accountCardName, { color: theme.text }]} numberOfLines={1}>{account.alias}</Text>
-              <View style={styles.accountCardMeta}>
-                <View style={[styles.accountRegionChip, { backgroundColor: theme.bgInput }]}>
-                  <Ionicons name="globe-outline" size={10} color={theme.textMuted} style={{ marginRight: 3 }} />
-                  <Text style={[styles.accountRegionText, { color: theme.textMuted }]}>{account.region}</Text>
-                </View>
-                <Text style={[styles.accountKeyText, { color: theme.textMuted }]}>{maskedKey}</Text>
-              </View>
-            </View>
-          </View>
-          {isActive && (
-            <View style={styles.accountActiveBadge}>
-              <Ionicons name="checkmark-circle" size={18} color={theme.accent} />
-            </View>
-          )}
-        </View>
-      </RipplePressable>
-    );
-  }, [region, accessKeyId, theme, handleSelectAccount]);
 
   const renderFieldError = (field: string) => {
     if (!errors[field as keyof FieldErrors]) return null;
