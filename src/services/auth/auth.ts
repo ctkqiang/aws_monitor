@@ -77,8 +77,6 @@ export async function signInWithAws(params: LoginParams): Promise<void> {
     throw new Error(validationError);
   }
 
-  useAuthStore.getState().signOut();
-
   try {
     await verifyCredentials(region, keyId, secret);
   } catch (e: any) {
@@ -112,12 +110,13 @@ export async function signInWithAws(params: LoginParams): Promise<void> {
     throw new Error(`${code}: ${message}`);
   }
 
-  const { credentials } = useAuthStore.getState();
-  if (!credentials) throw new Error('凭证设置失败');
+  const creds = {
+    accessKeyId: keyId,
+    secretAccessKey: secret,
+  };
 
-  useAuthStore.getState().setCredentials(credentials);
+  useAuthStore.getState().setCredentials(creds);
   useAuthStore.getState().setRegion(region);
-
   Logger.info(TAG, '登录完成', {
     region,
     keyId: keyId.substring(0, 8) + '****',

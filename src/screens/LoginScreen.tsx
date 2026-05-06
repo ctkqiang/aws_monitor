@@ -1,10 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  ActivityIndicator, Alert, ScrollView,
-  KeyboardAvoidingView, Platform, StyleSheet,
-  Image, Animated, Modal, FlatList,
+  View, Text, TextInput, ActivityIndicator, Alert, ScrollView,
+  KeyboardAvoidingView, Platform, StyleSheet, Image, Animated,
+  Modal, Linking, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,12 +19,11 @@ import AccountManagementScreen from './AccountManagementScreen';
 
 const TAG = 'LoginScreen';
 
-type RegionGroup = {
-  key: string;
-  regions: { code: string }[];
-};
+const IAM_CREDENTIAL_HELP_URL = 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html';
 
-function buildRegionGroups(t: any): RegionGroup[] {
+type RegionGroup = { key: string; regions: { code: string }[] };
+
+function buildRegionGroups(): RegionGroup[] {
   return [
     { key: 'northAmerica', regions: [{ code: 'us-east-1' }, { code: 'us-east-2' }, { code: 'us-west-1' }, { code: 'us-west-2' }, { code: 'ca-central-1' }] },
     { key: 'southAmerica', regions: [{ code: 'sa-east-1' }] },
@@ -34,6 +32,32 @@ function buildRegionGroups(t: any): RegionGroup[] {
     { key: 'middleEast', regions: [{ code: 'me-south-1' }, { code: 'me-central-1' }] },
     { key: 'africa', regions: [{ code: 'af-south-1' }] },
   ];
+}
+
+interface FieldErrors {
+  region?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+}
+
+function validateField(field: string, value: string, isEditingSecret?: boolean): string | undefined {
+  const v = value.trim();
+  switch (field) {
+    case 'region':
+      if (!v) return undefined;
+      return undefined;
+    case 'accessKeyId':
+      if (!v) return undefined;
+      if (v.length < 20) return '长度不足（至少 20 个字符）';
+      if (v.length > 24) return '长度超出（最多 24 个字符）';
+      return undefined;
+    case 'secretAccessKey':
+      if (!v && !isEditingSecret) return undefined;
+      if (v && v.length < 16) return '长度不足（至少 16 个字符）';
+      return undefined;
+    default:
+      return undefined;
+  }
 }
 
 export default function LoginScreen() {
@@ -53,29 +77,79 @@ export default function LoginScreen() {
   const [showSecret, setShowSecret] = React.useState(false);
   const [showAccounts, setShowAccounts] = React.useState(false);
   const [showRegionPicker, setShowRegionPicker] = React.useState(false);
+  const [errors, setErrors] = React.useState<FieldErrors>({});
+  const [touched, setTouched] = React.useState<Record<string, boolean>>({});
+  const [errorBanner, setErrorBanner] = React.useState<string | null>(null);
 
   const logoScale = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentSlide = useRef(new Animated.Value(24)).current;
+  const errorShake = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
 
-  const regionGroups = React.useMemo(() => buildRegionGroups(t), [t]);
+  const regionGroups = useMemo(() => buildRegionGroups(), []);
 
-  const getRegionLabel = (code: string) => {
+  const getRegionLabel = useCallback((code: string) => {
     const label = t(`regions.${code}`, '');
     return label ? `${label} (${code})` : code;
-  };
+  }, [t]);
+
+  const isFormValid = useMemo(() =>
+    region.trim().length > 0 &&
+    accessKeyId.trim().length >= 20 &&
+    secretAccessKey.trim().length >= 16,
+  [region, accessKeyId, secretAccessKey]);
 
   useEffect(() => {
     Animated.sequence([
       Animated.spring(logoScale, { toValue: 1, tension: 80, friction: 12, useNativeDriver: true }),
       Animated.parallel([
-        Animated.timing(contentOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(contentOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
         Animated.spring(contentSlide, { toValue: 0, tension: 120, friction: 14, useNativeDriver: true }),
       ]),
     ]).start();
   }, []);
 
-  const isFormValid = region.trim() && accessKeyId.trim() && secretAccessKey.trim();
+  useEffect(() => {
+    if (errorBanner) {
+      Animated.sequence([
+        Animated.timing(errorShake, { toValue: 1, duration: 80, useNativeDriver: true }),
+        Animated.timing(errorShake, { toValue: -1, duration: 80, useNativeDriver: true }),
+        Animated.timing(errorShake, { toValue: 0, duration: 80, useNativeDriver: true }),
+      ]).start();
+      const timer = setTimeout(() => setErrorBanner(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorBanner]);
+
+  const handleBlur = useCallback((field: string, value: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const err = validateField(field, value);
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (err) next[field as keyof FieldErrors] = err;
+      else delete next[field as keyof FieldErrors];
+      return next;
+    });
+  }, []);
+
+  const handleChange = useCallback((field: string, value: string) => {
+    const setters: Record<string, (v: string) => void> = {
+      region: setRegion,
+      accessKeyId: setAccessKeyId,
+      secretAccessKey: setSecretAccessKey,
+    };
+    setters[field]?.(value);
+    if (touched[field]) {
+      const err = validateField(field, value);
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (err) next[field as keyof FieldErrors] = err;
+        else delete next[field as keyof FieldErrors];
+        return next;
+      });
+    }
+  }, [touched]);
 
   if (showAccounts) {
     return (
@@ -86,6 +160,8 @@ export default function LoginScreen() {
           setAccessKeyId(account.accessKeyId);
           setSecretAccessKey(account.secretAccessKey);
           setShowAccounts(false);
+          setErrors({});
+          setTouched({});
           Logger.info(TAG, '已选择账户用于登录', { region: account.region });
         }}
       />
@@ -93,12 +169,27 @@ export default function LoginScreen() {
   }
 
   const handleSignIn = async () => {
-    if (!isFormValid) {
-      Alert.alert(t('common.error'), t('auth.fillAllFields'));
-      return;
-    }
+    const allErrors: FieldErrors = {
+      region: !region.trim() ? '请选择区域' : undefined,
+      accessKeyId: !accessKeyId.trim() ? '请输入访问密钥 ID'
+        : accessKeyId.trim().length < 20 ? '长度不足'
+        : undefined,
+      secretAccessKey: !secretAccessKey.trim() ? '请输入秘密访问密钥'
+        : secretAccessKey.trim().length < 16 ? '长度不足'
+        : undefined,
+    };
+    setErrors(allErrors);
+    setTouched({ region: true, accessKeyId: true, secretAccessKey: true });
+
+    const hasErrors = Object.values(allErrors).some(Boolean);
+    if (hasErrors) return;
+
     Logger.info(TAG, '登录已启动', { region: region.trim() });
     setIsLoading(true);
+    setErrorBanner(null);
+
+    Animated.spring(buttonScale, { toValue: 0.96, tension: 200, friction: 10, useNativeDriver: true }).start();
+
     try {
       await signInWithAws({
         region: region.trim(),
@@ -111,21 +202,36 @@ export default function LoginScreen() {
     } catch (error) {
       const message = error instanceof Error ? error.message : t('auth.signInFailed');
       Logger.logError(TAG, '登录失败', error);
-      Alert.alert(t('common.error'), message);
+      setErrorBanner(message);
+      Animated.spring(buttonScale, { toValue: 1, tension: 200, friction: 10, useNativeDriver: true }).start();
     } finally {
-      setIsLoading(false);
+      if (!errorBanner) {
+        setIsLoading(false);
+      }
+      setTimeout(() => {
+        setIsLoading(false);
+        Animated.spring(buttonScale, { toValue: 1, tension: 200, friction: 10, useNativeDriver: true }).start();
+      }, 300);
     }
   };
 
-  const handleSelectAccount = (account: StoredAccount) => {
+  const handleSelectAccount = useCallback((account: StoredAccount) => {
     const secret = getDecryptedSecret(account.id);
     setRegion(account.region);
     setAccessKeyId(account.accessKeyId);
     setSecretAccessKey(secret);
+    setErrors({});
+    setTouched({});
     Logger.info(TAG, '快速切换账户', { id: account.id, region: account.region });
-  };
+  }, [getDecryptedSecret]);
 
-  const renderAccountCard = (account: StoredAccount) => {
+  const handleForgotCredentials = useCallback(() => {
+    Linking.openURL(IAM_CREDENTIAL_HELP_URL).catch(() => {
+      Alert.alert('', '无法打开链接');
+    });
+  }, []);
+
+  const renderAccountCard = useCallback((account: StoredAccount) => {
     const maskedKey = account.accessKeyId.substring(0, 8) + '••••' + account.accessKeyId.substring(account.accessKeyId.length - 4);
     const isActive = region === account.region && accessKeyId === account.accessKeyId;
 
@@ -159,19 +265,34 @@ export default function LoginScreen() {
         </View>
       </RipplePressable>
     );
+  }, [region, accessKeyId, theme, handleSelectAccount]);
+
+  const renderFieldError = (field: string) => {
+    if (!errors[field as keyof FieldErrors]) return null;
+    return (
+      <Animated.View style={[styles.fieldError, { transform: [{ translateX: errorShake.interpolate({ inputRange: [-1, 0, 1], outputRange: [-4, 0, 4] }) }] }]}>
+        <Ionicons name="alert-circle" size={12} color={theme.danger} style={{ marginRight: 4 }} />
+        <Text style={[styles.fieldErrorText, { color: theme.danger }]}>{errors[field as keyof FieldErrors]}</Text>
+      </Animated.View>
+    );
   };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          accessibilityRole="none"
+        >
           <View style={styles.header}>
             <Animated.View style={[
-              styles.logoWrapper, { borderColor: theme.accent, backgroundColor: theme.accentLight },
+              styles.logoWrapper,
+              { borderColor: theme.accent, backgroundColor: theme.accentLight },
               { transform: [{ scale: logoScale }] },
             ]}>
-              <Image source={require('@/../assets/applogo.png')} style={styles.logo} resizeMode="contain" />
+              <Image source={require('@/../assets/applogo.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="AWSight Logo" />
             </Animated.View>
 
             <Animated.Text style={[styles.appTitle, { color: theme.accent }, { opacity: contentOpacity }]}>
@@ -190,10 +311,16 @@ export default function LoginScreen() {
                   {t('accounts.title')}
                 </Text>
                 <View style={{ flex: 1 }} />
-                <RipplePressable onPress={() => setShowAccounts(true)}>
+                <RipplePressable
+                  onPress={() => setShowAccounts(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accounts.manageBtn', { count: accounts.length })}
+                >
                   <View style={[styles.manageBtn, { backgroundColor: theme.btnSecondary }]}>
                     <Ionicons name="settings-outline" size={13} color={theme.btnSecondaryText} style={{ marginRight: 4 }} />
-                    <Text style={[styles.manageBtnText, { color: theme.btnSecondaryText }]}>{t('accounts.manageBtn', { count: accounts.length })}</Text>
+                    <Text style={[styles.manageBtnText, { color: theme.btnSecondaryText }]}>
+                      {t('accounts.manageBtn', { count: accounts.length })}
+                    </Text>
                   </View>
                 </RipplePressable>
               </View>
@@ -202,76 +329,137 @@ export default function LoginScreen() {
           )}
 
           <Animated.View style={[
-            styles.form, { backgroundColor: theme.bgCard, borderColor: theme.border },
+            styles.form,
+            { backgroundColor: theme.bgCard, borderColor: theme.border },
             { opacity: contentOpacity, transform: [{ translateY: contentSlide }] },
           ]}>
+            {errorBanner && (
+              <Animated.View style={[styles.errorBanner, { backgroundColor: theme.danger + '12', borderColor: theme.danger + '30' }, { transform: [{ translateX: errorShake }] }]}>
+                <Ionicons name="warning-outline" size={18} color={theme.danger} style={{ marginRight: SPACING.sm }} />
+                <Text style={[styles.errorBannerText, { color: theme.danger }]}>{errorBanner}</Text>
+              </Animated.View>
+            )}
+
             <View style={styles.fieldGroup}>
               <Text style={[styles.label, { color: theme.textLabel }]}>{t('auth.region')}</Text>
-              <RipplePressable onPress={() => setShowRegionPicker(true)}>
-                <View style={[styles.regionPicker, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
-                  <Ionicons name="globe-outline" size={16} color={theme.textMuted} style={{ marginRight: SPACING.sm }} />
+              <RipplePressable onPress={() => setShowRegionPicker(true)} accessibilityRole="button" accessibilityLabel={`${t('auth.region')}: ${getRegionLabel(region)}`}>
+                <View style={[
+                  styles.regionPicker,
+                  { backgroundColor: theme.bgInput, borderColor: errors.region && touched.region ? theme.danger : theme.border },
+                ]}>
+                  <Ionicons name="globe-outline" size={16} color={errors.region && touched.region ? theme.danger : theme.textMuted} style={{ marginRight: SPACING.sm }} />
                   <Text style={[styles.regionPickerText, { color: theme.text }]} numberOfLines={1}>
                     {getRegionLabel(region)}
                   </Text>
                   <Ionicons name="chevron-down" size={16} color={theme.textMuted} />
                 </View>
               </RipplePressable>
+              {renderFieldError('region')}
             </View>
 
             <View style={styles.fieldGroup}>
               <Text style={[styles.label, { color: theme.textLabel }]}>{t('auth.accessKeyId')}</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
-                <Ionicons name="key-outline" size={16} color={theme.textMuted} />
+              <View style={[styles.inputWrapper, { backgroundColor: theme.bgInput, borderColor: errors.accessKeyId && touched.accessKeyId ? theme.danger : theme.border }]}>
+                <Ionicons name="key-outline" size={16} color={errors.accessKeyId && touched.accessKeyId ? theme.danger : theme.textMuted} />
                 <TextInput
-                  style={[styles.input, { color: theme.text }]} value={accessKeyId} onChangeText={setAccessKeyId}
-                  placeholder="AKIA..." placeholderTextColor={theme.placeholder}
-                  autoCapitalize="none" autoCorrect={false} accessibilityLabel="Access Key ID"
+                  style={[styles.input, { color: theme.text }]}
+                  value={accessKeyId}
+                  onChangeText={(v) => handleChange('accessKeyId', v)}
+                  onBlur={() => handleBlur('accessKeyId', accessKeyId)}
+                  placeholder="AKIAIOSFODNN7EXAMPLE"
+                  placeholderTextColor={theme.placeholder}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  accessibilityLabel={t('auth.accessKeyId')}
+                  accessibilityState={{ disabled: isLoading }}
+                  textContentType="username"
+                  maxLength={24}
                 />
               </View>
+              {renderFieldError('accessKeyId')}
             </View>
 
             <View style={styles.fieldGroup}>
               <Text style={[styles.label, { color: theme.textLabel }]}>{t('auth.secretAccessKey')}</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
-                <Ionicons name="lock-closed-outline" size={16} color={theme.textMuted} />
+              <View style={[styles.inputWrapper, { backgroundColor: theme.bgInput, borderColor: errors.secretAccessKey && touched.secretAccessKey ? theme.danger : theme.border }]}>
+                <Ionicons name="lock-closed-outline" size={16} color={errors.secretAccessKey && touched.secretAccessKey ? theme.danger : theme.textMuted} />
                 <TextInput
-                  style={[styles.input, { color: theme.text }]} value={secretAccessKey} onChangeText={setSecretAccessKey}
-                  placeholder="••••••••••••••••" placeholderTextColor={theme.placeholder}
-                  secureTextEntry={!showSecret} autoCapitalize="none" autoCorrect={false}
-                  accessibilityLabel="Secret Access Key"
+                  style={[styles.input, { color: theme.text }]}
+                  value={secretAccessKey}
+                  onChangeText={(v) => handleChange('secretAccessKey', v)}
+                  onBlur={() => handleBlur('secretAccessKey', secretAccessKey)}
+                  placeholder="••••••••••••••••"
+                  placeholderTextColor={theme.placeholder}
+                  secureTextEntry={!showSecret}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  accessibilityLabel={t('auth.secretAccessKey')}
+                  accessibilityState={{ disabled: isLoading }}
+                  textContentType="password"
                 />
-                <TouchableOpacity onPress={() => setShowSecret(!showSecret)} activeOpacity={0.6}>
+                <Pressable
+                  onPress={() => setShowSecret(!showSecret)}
+                  accessibilityRole="button"
+                  accessibilityLabel={showSecret ? '隐藏密码' : '显示密码'}
+                  hitSlop={8}
+                >
                   <Ionicons name={showSecret ? 'eye-off-outline' : 'eye-outline'} size={18} color={theme.textMuted} />
-                </TouchableOpacity>
+                </Pressable>
               </View>
+              {renderFieldError('secretAccessKey')}
             </View>
 
             {isLoading ? (
-              <View style={styles.loadingContainer}>
+              <View style={styles.loadingContainer} accessibilityRole="progressbar" accessibilityLabel={t('auth.signingIn')}>
                 <ActivityIndicator size="large" color={theme.accent} />
                 <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('auth.signingIn')}</Text>
               </View>
             ) : (
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: theme.accent }, !isFormValid && styles.buttonDisabled]}
-                onPress={handleSignIn} disabled={!isFormValid || isLoading} activeOpacity={0.8}
-                accessibilityRole="button" accessibilityLabel={t('common.signIn')}
-                accessibilityState={{ disabled: !isFormValid || isLoading }}
-              >
-                <Ionicons name="log-in" size={20} color={theme.accentText} style={{ marginRight: SPACING.sm }} />
-                <Text style={[styles.buttonText, { color: theme.accentText }]}>{t('common.signIn')}</Text>
-              </TouchableOpacity>
+              <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                <RipplePressable
+                  onPress={handleSignIn}
+                  disabled={isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.signIn')}
+                  accessibilityState={{ disabled: !isFormValid || isLoading }}
+                >
+                  <View style={[
+                    styles.button,
+                    { backgroundColor: isFormValid ? theme.accent : theme.btnSecondary },
+                    !isFormValid && styles.buttonDisabled,
+                  ]}>
+                    <Ionicons name="log-in" size={20} color={isFormValid ? theme.accentText : theme.btnSecondaryText} style={{ marginRight: SPACING.sm }} />
+                    <Text style={[styles.buttonText, { color: isFormValid ? theme.accentText : theme.btnSecondaryText }]}>
+                      {t('common.signIn')}
+                    </Text>
+                  </View>
+                </RipplePressable>
+              </Animated.View>
             )}
+
+            <Pressable
+              onPress={handleForgotCredentials}
+              style={styles.forgotLink}
+              accessibilityRole="link"
+              accessibilityLabel="查看 AWS 访问密钥帮助文档"
+            >
+              <Text style={[styles.forgotText, { color: theme.textMuted }]}>
+                {t('auth.accessKeyId')} 帮助文档
+              </Text>
+              <Ionicons name="open-outline" size={12} color={theme.textMuted} style={{ marginLeft: 4 }} />
+            </Pressable>
           </Animated.View>
 
           {accounts.length === 0 && (
-            <Animated.View style={{ opacity: contentOpacity, marginTop: SPACING.xl }}>
-              <RipplePressable onPress={() => setShowAccounts(true)}>
+            <Animated.View style={{ opacity: contentOpacity, marginTop: SPACING.lg }}>
+              <RipplePressable onPress={() => setShowAccounts(true)} accessibilityRole="button" accessibilityLabel={t('accounts.setupBtn')}>
                 <View style={[styles.addAccountCta, { backgroundColor: theme.bgCard, borderColor: theme.border }, SHADOWS.sm]}>
                   <Ionicons name="add-circle-outline" size={22} color={theme.accent} style={{ marginRight: SPACING.md }} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.addAccountTitle, { color: theme.text }]}>{t('accounts.setupBtn')}</Text>
-                    <Text style={[styles.addAccountSub, { color: theme.textMuted }]}>Save credentials for quick region switching</Text>
+                    <Text style={[styles.addAccountSub, { color: theme.textMuted }]}>
+                      保存凭证以便快速切换区域
+                    </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
                 </View>
@@ -281,9 +469,9 @@ export default function LoginScreen() {
 
           <Animated.View style={[styles.footer, { opacity: contentOpacity }]}>
             <View style={styles.footerRow}>
-              <Ionicons name="shield-checkmark-outline" size={14} color={theme.textMuted} />
+              <Ionicons name="shield-checkmark-outline" size={14} color={theme.success} />
               <Text style={[styles.footerText, { color: theme.textMuted }]}>
-                Your credentials are stored securely on your device
+                凭证经加密后存储在本地设备
               </Text>
             </View>
           </Animated.View>
@@ -291,13 +479,13 @@ export default function LoginScreen() {
       </KeyboardAvoidingView>
 
       <Modal visible={showRegionPicker} animationType="fade" transparent onRequestClose={() => setShowRegionPicker(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowRegionPicker(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setShowRegionPicker(false)}>
           <View style={[styles.regionModal, { backgroundColor: theme.bgCard }, SHADOWS.xl]}>
             <View style={[styles.regionModalHeader, { borderBottomColor: theme.border }]}>
               <Ionicons name="globe-outline" size={20} color={theme.accent} style={{ marginRight: SPACING.sm }} />
               <Text style={[styles.regionModalTitle, { color: theme.text }]}>{t('regions.selectRegion')}</Text>
               <View style={{ flex: 1 }} />
-              <RipplePressable onPress={() => setShowRegionPicker(false)}>
+              <RipplePressable onPress={() => setShowRegionPicker(false)} accessibilityRole="button" accessibilityLabel="关闭">
                 <Ionicons name="close-circle" size={26} color={theme.textMuted} />
               </RipplePressable>
             </View>
@@ -312,7 +500,7 @@ export default function LoginScreen() {
                   {group.regions.map((r) => {
                     const isSelected = region === r.code;
                     return (
-                      <RipplePressable key={r.code} onPress={() => { setRegion(r.code); setShowRegionPicker(false); }}>
+                      <RipplePressable key={r.code} onPress={() => { setRegion(r.code); setShowRegionPicker(false); handleBlur('region', r.code); }}>
                         <View style={[styles.regionItem, { borderBottomColor: theme.border }, isSelected && { backgroundColor: theme.accentLight }]}>
                           <Ionicons
                             name={isSelected ? 'radio-button-on' : 'radio-button-off'}
@@ -335,7 +523,7 @@ export default function LoginScreen() {
               ))}
             </ScrollView>
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );
@@ -389,6 +577,12 @@ const styles = StyleSheet.create({
     width: '100%', borderRadius: RADIUS.xxl, borderWidth: StyleSheet.hairlineWidth,
     padding: SPACING.xxl, ...SHADOWS.md,
   },
+  errorBanner: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth,
+    padding: SPACING.md, marginBottom: SPACING.lg,
+  },
+  errorBannerText: { ...TYPOGRAPHY.caption, flex: 1 },
   fieldGroup: { marginBottom: SPACING.lg },
   label: { ...TYPOGRAPHY.label, marginBottom: SPACING.sm },
   regionPicker: {
@@ -403,14 +597,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md, gap: SPACING.sm,
   },
   input: { flex: 1, paddingVertical: SPACING.lg, fontSize: 15 },
+  fieldError: {
+    flexDirection: 'row', alignItems: 'center',
+    marginTop: SPACING.xs, paddingLeft: SPACING.xs,
+  },
+  fieldErrorText: { ...TYPOGRAPHY.monoSm, flex: 1 },
   loadingContainer: { alignItems: 'center', marginTop: SPACING.xxxl, paddingVertical: SPACING.lg },
   loadingText: { ...TYPOGRAPHY.caption, marginTop: SPACING.md },
   button: {
     marginTop: SPACING.xxl, height: 56, borderRadius: RADIUS.xl,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', ...SHADOWS.md,
   },
-  buttonDisabled: { opacity: 0.35 },
+  buttonDisabled: { opacity: 0.5 },
   buttonText: { ...TYPOGRAPHY.button },
+  forgotLink: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    marginTop: SPACING.lg,
+  },
+  forgotText: { ...TYPOGRAPHY.caption },
   footer: { alignItems: 'center', marginTop: SPACING.xxxl },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, paddingHorizontal: SPACING.lg },
   footerText: { ...TYPOGRAPHY.caption, flex: 1 },
@@ -425,9 +629,7 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center', alignItems: 'center', padding: SPACING.xxl,
   },
-  regionModal: {
-    width: '100%', maxWidth: 400, borderRadius: RADIUS.xxl, overflow: 'hidden',
-  },
+  regionModal: { width: '100%', maxWidth: 400, borderRadius: RADIUS.xxl, overflow: 'hidden' },
   regionModalHeader: {
     flexDirection: 'row', alignItems: 'center',
     padding: SPACING.xl, borderBottomWidth: StyleSheet.hairlineWidth,
