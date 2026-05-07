@@ -13,7 +13,6 @@ import { ThemeProvider, useTheme, useResolvedThemeMode } from '@/theme/ThemeCont
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LoginScreen from '@/screens/LoginScreen';
 import MainTabs from '@/screens/MainTabs';
-import { registerBackgroundHealthCheck } from '@/services/healthMonitor';
 
 const queryClient = new QueryClient();
 
@@ -42,7 +41,6 @@ function AppContent() {
       RNStatusBar.setBackgroundColor(theme.bg, true);
       RNStatusBar.setBarStyle(theme.statusBar === 'light' ? 'light-content' : 'dark-content', true);
     }
-    registerBackgroundHealthCheck();
   }, [theme.statusBar, theme.bg]);
 
   return (

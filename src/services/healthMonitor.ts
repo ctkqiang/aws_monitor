@@ -1,81 +1,10 @@
 import * as TaskManager from 'expo-task-manager';
 import * as BackgroundFetch from 'expo-background-fetch';
-import { Platform } from 'react-native';
 import { useHealthStore, ServiceEndpoint, ServiceStatus, MIN_CHECK_INTERVAL } from '@/stores/healthStore';
 import { Logger } from '@/utils/logger';
 
 const TAG = '健康检查';
 const BG_TASK_NAME = 'AWSIGHT_HEALTH_CHECK';
-
-let notificationReady = false;
-let Notifications: any = null;
-
-async function loadNotificationsSafe() {
-  if (notificationReady) return Notifications;
-  try {
-    const mod = require('expo-notifications');
-    Notifications = mod;
-    const { status } = await mod.requestPermissionsAsync();
-    if (status === 'granted' && Platform.OS === 'android') {
-      await mod.setNotificationChannelAsync('service-health', {
-        name: '服务健康告警',
-        importance: 4,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF9900',
-        sound: 'default',
-      });
-    }
-    notificationReady = true;
-    Logger.info(TAG, '通知模块已就绪');
-  } catch (e) {
-    Logger.warn(TAG, '通知模块不可用（Expo Go 不支持后台通知）', { error: String(e) });
-    Notifications = null;
-    notificationReady = false;
-  }
-  return Notifications;
-}
-
-async function sendDownNotification(service: ServiceEndpoint) {
-  const mod = await loadNotificationsSafe();
-  if (!mod) return null;
-  try {
-    const id = await mod.scheduleNotificationAsync({
-      content: {
-        title: '⚠️ 服务停止告警',
-        body: `${service.type} 服务已停止`,
-        subtitle: `${service.name} (${service.host}:${service.port})`,
-        data: { serviceId: service.id, type: service.type },
-        sound: 'default',
-        ...(Platform.OS === 'android' ? { channelId: 'service-health' } : {}),
-      },
-      trigger: null,
-    });
-    Logger.info(TAG, '告警通知已发送', { service: service.type, notifId: id });
-    return id;
-  } catch (e) {
-    Logger.error(TAG, '通知发送失败', { error: String(e) });
-    return null;
-  }
-}
-
-async function sendRecoveredNotification(service: ServiceEndpoint) {
-  const mod = await loadNotificationsSafe();
-  if (!mod) return;
-  try {
-    await mod.scheduleNotificationAsync({
-      content: {
-        title: '✅ 服务已恢复',
-        body: `${service.type} 服务已恢复正常`,
-        subtitle: `${service.name} (${service.host}:${service.port})`,
-        data: { serviceId: service.id, type: service.type },
-        ...(Platform.OS === 'android' ? { channelId: 'service-health' } : {}),
-      },
-      trigger: null,
-    });
-  } catch (e) {
-    Logger.error(TAG, '恢复通知发送失败', { error: String(e) });
-  }
-}
 
 type HealthCheckFn = (endpoint: ServiceEndpoint) => Promise<{ status: ServiceStatus; responseMs: number; error?: string }>;
 
@@ -187,12 +116,10 @@ async function checkService(svc: ServiceEndpoint, config: { retryCount: number; 
 
   if (lastResult.status !== 'healthy' && prevStatus === 'healthy') {
     Logger.warn(TAG, `服务状态变更: ${svc.type} → ${lastResult.status}`, { error: lastResult.error });
-    await sendDownNotification(svc);
   }
 
   if (lastResult.status === 'healthy' && prevStatus !== 'healthy' && prevStatus !== 'unknown') {
     Logger.info(TAG, `服务已恢复: ${svc.type}`);
-    await sendRecoveredNotification(svc);
   }
 }
 
