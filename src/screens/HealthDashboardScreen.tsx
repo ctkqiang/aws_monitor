@@ -119,7 +119,10 @@ export default function HealthDashboardScreen({ onBack }: Props) {
         </RipplePressable>
         <Text style={[styles.title, { color: theme.text }]}>服务健康监控</Text>
         <RipplePressable onPress={() => { setConfigType('RDS'); setEditInterval(String(Math.floor((config.RDS?.intervalMs || 30000) / 1000))); setShowConfig(true); }}>
-          <Ionicons name="settings-outline" size={20} color={theme.textMuted} />
+          <View style={styles.settingsBtn}>
+            <Ionicons name="settings-outline" size={20} color={theme.textMuted} />
+            <Text style={[styles.settingsBtnText, { color: theme.textMuted }]}>配置</Text>
+          </View>
         </RipplePressable>
       </View>
 
@@ -360,6 +363,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', ...SHADOWS.md,
   },
   fabLabel: { ...TYPOGRAPHY.caption, marginLeft: SPACING.sm },
+  settingsBtn: { flexDirection: 'row', alignItems: 'center' },
+  settingsBtnText: { ...TYPOGRAPHY.caption, marginLeft: 3 },
   scroll: { padding: SPACING.lg, paddingTop: SPACING.sm },
   groupSection: { marginBottom: SPACING.xl },
   groupHeader: {

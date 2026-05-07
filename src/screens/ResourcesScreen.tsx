@@ -13,6 +13,8 @@ import { useLoadBalancers } from '@/hooks/useELB';
 import { useSecurityGroups } from '@/hooks/useEC2';
 import { useFSxFileSystems } from '@/hooks/useFSx';
 import { useBuckets } from '@/hooks/useS3';
+import { useSecrets } from '@/hooks/useSecretsManager';
+import { useIAMRoles, useIAMUsers, type IamRoleEntry, type IamUserEntry } from '@/hooks/useIAM';
 import { Logger } from '@/utils/logger';
 import { SkeletonList } from '@/utils/animations';
 import { Haptic } from '@/utils/haptics';
@@ -21,7 +23,7 @@ import ResourceDetailScreen, { ResourceType } from './ResourceDetailScreen';
 
 const TAG = 'Resources';
 
-type ResourceTab = 'rds' | 'elasticache' | 'lb' | 'sg' | 's3';
+type ResourceTab = 'rds' | 'elasticache' | 'lb' | 'sg' | 's3' | 'secrets' | 'iamRoles' | 'iamUsers';
 
 type TabDef = { key: ResourceTab; labelKey: string; icon: keyof typeof Ionicons.glyphMap };
 const TAB_DEFS: TabDef[] = [
@@ -30,6 +32,9 @@ const TAB_DEFS: TabDef[] = [
   { key: 'lb', labelKey: 'Load Balancers', icon: 'git-network' },
   { key: 'sg', labelKey: 'Security Groups', icon: 'shield-checkmark' },
   { key: 's3', labelKey: 'S3', icon: 'cloud' },
+  { key: 'secrets', labelKey: 'Secret Manager', icon: 'lock-closed' },
+  { key: 'iamRoles', labelKey: 'IAM Roles', icon: 'ribbon' },
+  { key: 'iamUsers', labelKey: 'IAM Users', icon: 'people' },
 ];
 
 function ResourceCard({
@@ -99,6 +104,9 @@ export default function ResourcesScreen() {
   const sg = useSecurityGroups();
   const fsx = useFSxFileSystems();
   const s3 = useBuckets();
+  const secrets = useSecrets();
+  const iamRoles = useIAMRoles();
+  const iamUsers = useIAMUsers();
 
   if (selectedItem) {
     return (
@@ -117,10 +125,13 @@ export default function ResourcesScreen() {
       case 'lb': return lb;
       case 'sg': return sg;
       case 's3': return s3;
+      case 'secrets': return secrets;
+      case 'iamRoles': return iamRoles;
+      case 'iamUsers': return iamUsers;
     }
   };
 
-  const activeQuery = getQueryForTab(activeTab);
+  const activeQuery = getQueryForTab(activeTab)!;
 
   const renderRDSItem = ({ item, index }: { item: any; index: number }) => (
     <ResourceCard
@@ -188,6 +199,52 @@ export default function ResourcesScreen() {
     />
   );
 
+  const renderSecretsItem = ({ item, index }: { item: any; index: number }) => (
+    <ResourceCard
+      title={item.Name}
+      subtitle={item.Description || '无描述'}
+      meta={item.LastChangedDate ? new Date(item.LastChangedDate).toLocaleDateString() : ''}
+      status={item.RotationEnabled ? '自动轮转' : '手动轮转'}
+      statusColor={item.RotationEnabled ? theme.success : theme.warning}
+      theme={theme}
+      index={index}
+    />
+  );
+
+  const renderIAMRoleItem = ({ item, index }: { item: IamRoleEntry; index: number }) => (
+    <ResourceCard
+      title={item.RoleName}
+      subtitle={item.Description || ''}
+      meta={item.CreateDate ? `创建: ${new Date(item.CreateDate).toLocaleDateString()}` : ''}
+      status={item.LastUsedDate ? '已使用' : '未使用'}
+      statusColor={item.LastUsedDate ? theme.success : theme.textMuted}
+      theme={theme}
+      index={index}
+    />
+  );
+
+  const renderIAMUserItem = ({ item, index }: { item: IamUserEntry; index: number }) => {
+    const lastOnline = item.PasswordLastUsed
+      ? `上次在线: ${new Date(item.PasswordLastUsed).toLocaleString()}`
+      : '从未登录';
+    const daysSince = item.PasswordLastUsed
+      ? Math.floor((Date.now() - new Date(item.PasswordLastUsed).getTime()) / 86400000)
+      : Infinity;
+    const isRecent = daysSince < 30;
+
+    return (
+      <ResourceCard
+        title={item.UserName}
+        meta={item.CreateDate ? `创建: ${new Date(item.CreateDate).toLocaleDateString()}` : ''}
+        subtitle={lastOnline}
+        status={isRecent ? '活跃' : '非活跃'}
+        statusColor={isRecent ? theme.success : theme.warning}
+        theme={theme}
+        index={index}
+      />
+    );
+  };
+
   const getRenderFn = () => {
     switch (activeTab) {
       case 'rds': return renderRDSItem;
@@ -195,6 +252,9 @@ export default function ResourcesScreen() {
       case 'lb': return renderLBItem;
       case 'sg': return renderSGItem;
       case 's3': return renderS3Item;
+      case 'secrets': return renderSecretsItem;
+      case 'iamRoles': return renderIAMRoleItem;
+      case 'iamUsers': return renderIAMUserItem;
     }
   };
 
@@ -205,6 +265,9 @@ export default function ResourcesScreen() {
       case 'lb': return t('dashboard.noLB') || 'No Load Balancers found';
       case 'sg': return t('dashboard.noSG') || 'No Security Groups found';
       case 's3': return t('s3.noBuckets') || 'No S3 buckets found';
+      case 'secrets': return 'No secrets found';
+      case 'iamRoles': return 'No IAM roles found';
+      case 'iamUsers': return 'No IAM users found';
     }
   };
 
@@ -215,6 +278,9 @@ export default function ResourcesScreen() {
       case 'lb': return lb.data || [];
       case 'sg': return sg.data || [];
       case 's3': return s3.data || [];
+      case 'secrets': return secrets.data || [];
+      case 'iamRoles': return iamRoles.data || [];
+      case 'iamUsers': return iamUsers.data || [];
     }
   };
 
@@ -268,8 +334,8 @@ export default function ResourcesScreen() {
       ) : (
         <FlatList
           data={getData()}
-          keyExtractor={(item: any) => item.DBInstanceIdentifier || item.CacheClusterId || item.LoadBalancerName || item.FileSystemId || item.GroupId || Math.random().toString()}
-          renderItem={getRenderFn()}
+          keyExtractor={(item: any) => item.DBInstanceIdentifier || item.CacheClusterId || item.LoadBalancerName || item.FileSystemId || item.GroupId || item.Name || item.RoleName || item.UserName || Math.random().toString()}
+          renderItem={getRenderFn() as any}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={
