@@ -12,6 +12,7 @@ import { useClusters, useServices, useRestartService } from '@/hooks/useECS';
 import { useTaskDefinition } from '@/hooks/useECSTaskDef';
 import { useUIStore } from '@/stores/uiStore';
 import { SkeletonList } from '@/utils/animations';
+import { Haptic } from '@/utils/haptics';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 import { pushBackHandler, popBackHandler } from './MainTabs';
@@ -383,7 +384,7 @@ export default function ECSServicesScreen() {
             keyExtractor={(s: any) => s.serviceArn}
             renderItem={renderServiceItem}
             contentContainerStyle={styles.list}
-            refreshControl={<RefreshControl refreshing={servicesRefetch || false} onRefresh={refetchServices} tintColor={theme.accent} colors={[theme.accent]} />}
+            refreshControl={<RefreshControl refreshing={servicesRefetch || false} onRefresh={() => { Haptic.medium(); refetchServices(); }} tintColor={theme.accent} colors={[theme.accent]} />}
             ListEmptyComponent={
               <View style={styles.centered}>
                 <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t('screens.ecsServices.noServices')}</Text>
@@ -409,7 +410,7 @@ export default function ECSServicesScreen() {
           keyExtractor={(item: string) => item}
           renderItem={renderClusterItem}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={clustersRefetch || false} onRefresh={refetchClusters} tintColor={theme.accent} colors={[theme.accent]} />}
+          refreshControl={<RefreshControl refreshing={clustersRefetch || false} onRefresh={() => { Haptic.medium(); refetchClusters(); }} tintColor={theme.accent} colors={[theme.accent]} />}
           ListEmptyComponent={
             <View style={styles.centered}>
               <Text style={[styles.emptyText, { color: theme.textMuted }]}>{t('screens.ecsServices.noClusters')}</Text>

@@ -15,6 +15,7 @@ import { useFSxFileSystems } from '@/hooks/useFSx';
 import { useBuckets } from '@/hooks/useS3';
 import { Logger } from '@/utils/logger';
 import { SkeletonList } from '@/utils/animations';
+import { Haptic } from '@/utils/haptics';
 import RipplePressable from '@/components/RipplePressable';
 import ResourceDetailScreen, { ResourceType } from './ResourceDetailScreen';
 
@@ -274,7 +275,7 @@ export default function ResourcesScreen() {
           refreshControl={
             <RefreshControl
               refreshing={activeQuery.isRefetching || false}
-              onRefresh={() => activeQuery.refetch()}
+              onRefresh={() => { Haptic.medium(); activeQuery.refetch(); }}
               tintColor={theme.accent}
               colors={[theme.accent]}
             />

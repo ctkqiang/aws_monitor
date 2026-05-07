@@ -2,14 +2,17 @@ import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View, Text, ScrollView, StyleSheet, Animated,
-  ActivityIndicator, TouchableOpacity, RefreshControl,
+  ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
 import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useBilling, PeriodGranularity, ServiceCost, CostDataPoint } from '@/hooks/useCostExplorer';
 import { Logger } from '@/utils/logger';
+import { SkeletonList } from '@/utils/animations';
+import { Haptic } from '@/utils/haptics';
 import BarChart from '@/components/BarChart';
+import RipplePressable from '@/components/RipplePressable';
 
 const TAG = 'Billing';
 
@@ -176,7 +179,7 @@ export default function BillingScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isRefetching || false}
-            onRefresh={refetch}
+            onRefresh={() => { Haptic.medium(); refetch(); }}
             tintColor={theme.accent}
             colors={[theme.accent]}
           />
@@ -191,33 +194,32 @@ export default function BillingScreen() {
           {PERIODS.map((p) => {
             const isActive = period === p.key;
             return (
-              <TouchableOpacity
+              <RipplePressable
                 key={p.key}
-                style={[
-                  styles.periodBtn,
-                  isActive && { backgroundColor: theme.accentLight, borderColor: theme.accent },
-                  { borderColor: theme.border },
-                ]}
                 onPress={() => {
                   Logger.info(TAG, '时间周期已切换', { from: period, to: p.key });
                   setPeriod(p.key);
                 }}
-                activeOpacity={0.7}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
               >
-                <Ionicons name={p.icon} size={13} color={isActive ? theme.accent : theme.textMuted} style={{ marginRight: 4 }} />
-                <Text style={[styles.periodText, { color: isActive ? theme.accent : theme.textMuted }]}>
-                  {p.label}
-                </Text>
-              </TouchableOpacity>
+                <View style={[
+                  styles.periodBtn,
+                  isActive && { backgroundColor: theme.accentLight, borderColor: theme.accent },
+                  { borderColor: theme.border },
+                ]}>
+                  <Ionicons name={p.icon} size={13} color={isActive ? theme.accent : theme.textMuted} style={{ marginRight: 4 }} />
+                  <Text style={[styles.periodText, { color: isActive ? theme.accent : theme.textMuted }]}>
+                    {p.label}
+                  </Text>
+                </View>
+              </RipplePressable>
             );
           })}
         </ScrollView>
 
         {isLoading && !data ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.accent} />
-            <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
-          </View>
+          <SkeletonList count={6} />
         ) : error ? (
           <View style={styles.errorContainer}>
             <Ionicons name="cloud-offline-outline" size={48} color={theme.danger} />

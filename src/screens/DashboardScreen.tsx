@@ -16,6 +16,7 @@ import { useClusters } from '@/hooks/useECS';
 import { useRepositories } from '@/hooks/useECR';
 import { Logger } from '@/utils/logger';
 import { SkeletonList } from '@/utils/animations';
+import { Haptic } from '@/utils/haptics';
 import ResourceDetailScreen, { ResourceType } from './ResourceDetailScreen';
 import RipplePressable from '@/components/RipplePressable';
 
@@ -174,7 +175,7 @@ export default function DashboardScreen() {
         refreshControl={
           <RefreshControl
             refreshing={rds.isRefetching || elasticache.isRefetching || lb.isRefetching || sg.isRefetching || fsx.isRefetching}
-            onRefresh={refetchAll}
+            onRefresh={() => { Haptic.medium(); refetchAll(); }}
             tintColor={theme.accent}
             colors={[theme.accent]}
           />

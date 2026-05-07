@@ -1,10 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, Animated } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
 import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useLogStreams } from '@/hooks/useCloudWatch';
+import { SkeletonList } from '@/utils/animations';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 import { pushBackHandler, popBackHandler } from './MainTabs';
@@ -114,10 +115,7 @@ export default function LogStreamsScreen({ logGroupName, onBack }: Props) {
         <View style={{ width: 60 }} />
       </View>
       {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
-        </View>
+        <SkeletonList count={6} />
       ) : (
         <FlatList
           data={streams || []}

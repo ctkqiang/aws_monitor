@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
 import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useBuckets, useObjects } from '@/hooks/useS3';
+import { SkeletonList } from '@/utils/animations';
+import { Haptic } from '@/utils/haptics';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 
@@ -189,10 +191,7 @@ function ObjectListScreen({ bucketName, onBack }: { bucketName: string; onBack: 
       </View>
 
       {isLoading && !objects ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
-        </View>
+        <SkeletonList count={8} />
       ) : error ? (
         <View style={styles.centered}>
           <Ionicons name="cloud-offline-outline" size={48} color={theme.danger} />
@@ -218,7 +217,7 @@ function ObjectListScreen({ bucketName, onBack }: { bucketName: string; onBack: 
           refreshControl={
             <RefreshControl
               refreshing={isRefetching || false}
-              onRefresh={refetch}
+              onRefresh={() => { Haptic.medium(); refetch(); }}
               tintColor={theme.accent}
               colors={[theme.accent]}
             />
@@ -360,10 +359,7 @@ export default function S3Screen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
-        </View>
+        <SkeletonList count={6} />
       ) : error ? (
         <View style={styles.centered}>
           <Ionicons name="cloud-offline-outline" size={48} color={theme.danger} />
@@ -389,7 +385,7 @@ export default function S3Screen() {
           refreshControl={
             <RefreshControl
               refreshing={isRefetching || false}
-              onRefresh={refetch}
+              onRefresh={() => { Haptic.medium(); refetch(); }}
               tintColor={theme.accent}
               colors={[theme.accent]}
             />

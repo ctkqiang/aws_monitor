@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
 import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useAccountsStore, StoredAccount, AccountFormData } from '@/stores/accountsStore';
+import { Haptic } from '@/utils/haptics';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 
@@ -84,10 +85,12 @@ export default function AccountManagementScreen({ onBack, onSelect }: Props) {
     try {
       if (editingId) {
         updateAccount(editingId, formData);
+        Haptic.success();
         Logger.info(TAG, '账户已更新', { id: editingId });
         Alert.alert('', t('accounts.saved') || 'Account updated successfully');
       } else {
         addAccount(formData);
+        Haptic.success();
         Logger.info(TAG, '账户已创建');
         Alert.alert('', t('accounts.created') || 'Account saved successfully');
       }
@@ -123,6 +126,7 @@ export default function AccountManagementScreen({ onBack, onSelect }: Props) {
           text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
+            Haptic.warning();
             removeAccount(account.id);
             Alert.alert('', t('accounts.deleted') || 'Account deleted');
           },

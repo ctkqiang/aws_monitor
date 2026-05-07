@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
 import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useLogEvents } from '@/hooks/useCloudWatch';
+import { Haptic } from '@/utils/haptics';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 
@@ -157,7 +158,7 @@ export default function LogEventsScreen({ logGroupName, logStreamName, onBack }:
           refreshControl={
             <RefreshControl
               refreshing={isRefetching || false}
-              onRefresh={refetch}
+              onRefresh={() => { Haptic.medium(); refetch(); }}
               tintColor={theme.accent}
               colors={[theme.accent]}
               progressViewOffset={10}

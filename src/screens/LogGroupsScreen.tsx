@@ -7,6 +7,7 @@ import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useLogGroups } from '@/hooks/useCloudWatch';
 import { Logger } from '@/utils/logger';
 import { SkeletonList } from '@/utils/animations';
+import { Haptic } from '@/utils/haptics';
 import RipplePressable from '@/components/RipplePressable';
 import LogStreamsScreen from './LogStreamsScreen';
 
@@ -142,7 +143,7 @@ export default function LogGroupsScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isRefetching || false} onRefresh={refetch} tintColor={theme.accent} colors={[theme.accent]} />
+            <RefreshControl refreshing={isRefetching || false} onRefresh={() => { Haptic.medium(); refetch(); }} tintColor={theme.accent} colors={[theme.accent]} />
           }
           ListEmptyComponent={
             <View style={styles.centered}>

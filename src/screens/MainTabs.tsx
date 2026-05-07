@@ -11,6 +11,8 @@ import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useCurrentUser } from '@/hooks/useIAM';
 import { useLogGroups } from '@/hooks/useCloudWatch';
 import { Logger } from '@/utils/logger';
+import { SkeletonList } from '@/utils/animations';
+import { Haptic } from '@/utils/haptics';
 import LogGroupsScreen from './LogGroupsScreen';
 import ECSServicesScreen from './ECSServicesScreen';
 import ECRReposScreen from './ECRReposScreen';
@@ -191,6 +193,7 @@ export default function MainTabs() {
               key={tab.key}
               style={styles.tab}
               onPress={() => {
+                Haptic.selection();
                 Logger.info(TAG, '标签页已切换', { from: activeTab, to: tab.key });
                 setActiveTab(tab.key);
               }}

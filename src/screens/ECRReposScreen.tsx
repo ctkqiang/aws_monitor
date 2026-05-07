@@ -7,6 +7,7 @@ import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useRepositories, useImages } from '@/hooks/useECR';
 import { Logger } from '@/utils/logger';
 import { SkeletonList } from '@/utils/animations';
+import { Haptic } from '@/utils/haptics';
 import RipplePressable from '@/components/RipplePressable';
 
 const TAG = 'ECR';
@@ -161,7 +162,7 @@ function ECRImageDetail({ repoName, onBack }: { repoName: string; onBack: () => 
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshing={isRefetching || false}
-          onRefresh={refetch}
+          onRefresh={() => { Haptic.medium(); refetch(); }}
           ListEmptyComponent={
             <View style={styles.centered}>
               <Ionicons name="images-outline" size={48} color={theme.textMuted} />
@@ -216,7 +217,7 @@ export default function ECRReposScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshing={isRefetching || false}
-          onRefresh={refetch}
+          onRefresh={() => { Haptic.medium(); refetch(); }}
           ListEmptyComponent={
             <View style={styles.centered}>
               <Ionicons name="cube-outline" size={48} color={theme.textMuted} />
