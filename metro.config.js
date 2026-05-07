@@ -7,6 +7,7 @@ const config = getDefaultConfig(__dirname, {
 
 config.resolver.sourceExts = [...config.resolver.sourceExts, 'mjs', 'cjs'];
 config.resolver.unstable_conditionNames = ['require', 'node', 'default'];
+config.resolver.unstable_enablePackageExports = true;
 config.transformer.babelTransformerPath = path.resolve(__dirname, 'metro.transformer.js');
 
 module.exports = config;
