@@ -13,6 +13,7 @@ import { ThemeProvider, useTheme, useResolvedThemeMode } from '@/theme/ThemeCont
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LoginScreen from '@/screens/LoginScreen';
 import MainTabs from '@/screens/MainTabs';
+import { registerBackgroundHealthCheck } from '@/services/healthMonitor';
 
 const queryClient = new QueryClient();
 
@@ -33,7 +34,7 @@ function AppContent() {
 
   const animatedBg = bgAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#0f0f1a', '#f2f2f7'],
+    outputRange: [theme.gradientStart || '#0a0a14', theme.gradientEnd || '#f5f5fa'],
   });
 
   useEffect(() => {
@@ -41,6 +42,7 @@ function AppContent() {
       RNStatusBar.setBackgroundColor(theme.bg, true);
       RNStatusBar.setBarStyle(theme.statusBar === 'light' ? 'light-content' : 'dark-content', true);
     }
+    registerBackgroundHealthCheck();
   }, [theme.statusBar, theme.bg]);
 
   return (

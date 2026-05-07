@@ -13,6 +13,8 @@ import { useLogGroups } from '@/hooks/useCloudWatch';
 import { Logger } from '@/utils/logger';
 import { SkeletonList } from '@/utils/animations';
 import { Haptic } from '@/utils/haptics';
+import { useDbStore, DbConnection } from '@/stores/dbStore';
+import RipplePressable from '@/components/RipplePressable';
 import LogGroupsScreen from './LogGroupsScreen';
 import ECSServicesScreen from './ECSServicesScreen';
 import ECRReposScreen from './ECRReposScreen';
@@ -20,6 +22,10 @@ import ResourcesScreen from './ResourcesScreen';
 import DashboardScreen from './DashboardScreen';
 import BillingScreen from './BillingScreen';
 import SettingsScreen from './SettingsScreen';
+import AddDatabaseScreen from './db/AddDatabaseScreen';
+import DatabaseTableViewer from './db/DatabaseTableViewer';
+import DbConnectionsListScreen from './db/DbConnectionsListScreen';
+import HealthDashboardScreen from './HealthDashboardScreen';
 
 type Tab = 'dashboard' | 'logs' | 'ecs' | 'ecr' | 'resources' | 's3' | 'billing' | 'settings';
 
@@ -55,6 +61,12 @@ export default function MainTabs() {
   const { data: iamUser } = useCurrentUser();
   const [showCloudWatchModal, setShowCloudWatchModal] = React.useState(false);
   const { data: logGroups } = useLogGroups();
+  const [showDb, setShowDb] = React.useState(false);
+  const [editingDb, setEditingDb] = React.useState<DbConnection | undefined>();
+  const [viewingDb, setViewingDb] = React.useState<DbConnection | undefined>();
+  const [showDbList, setShowDbList] = React.useState(false);
+  const dbConnections = useDbStore((s) => s.connections);
+  const [showHealth, setShowHealth] = React.useState(false);
 
   const tabIndicatorLeft = useRef(new Animated.Value(0)).current;
   const tabWidths = useRef<Record<Tab, number>>({
@@ -84,6 +96,31 @@ export default function MainTabs() {
       useNativeDriver: true,
     }).start();
   }, [activeTab]);
+
+  if (showDb) {
+    return (
+      <AddDatabaseScreen
+        onBack={() => { setShowDb(false); setEditingDb(undefined); }}
+        editConnection={editingDb}
+      />
+    );
+  }
+  if (showDbList) {
+    return (
+      <DbConnectionsListScreen
+        onBack={() => setShowDbList(false)}
+        onAdd={() => { setEditingDb(undefined); setShowDb(true); }}
+        onEdit={(c) => { setEditingDb(c); setShowDb(true); }}
+        onConnect={(c) => { setShowDbList(false); setViewingDb(c); }}
+      />
+    );
+  }
+  if (viewingDb) {
+    return <DatabaseTableViewer connection={viewingDb} onBack={() => setViewingDb(undefined)} />;
+  }
+  if (showHealth) {
+    return <HealthDashboardScreen onBack={() => setShowHealth(false)} />;
+  }
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'dashboard', label: t('tabs.dashboard') },
@@ -160,6 +197,31 @@ export default function MainTabs() {
               )}
             </View>
           </View>
+          <View style={styles.headerActions}>
+            <RipplePressable
+              onPress={() => setShowHealth(true)}
+              accessibilityRole="button"
+              accessibilityLabel="服务健康监控"
+            >
+              <View style={[styles.actionBtn, { backgroundColor: theme.accentLight, borderColor: theme.accent + '40' }]}>
+                <Ionicons name="pulse" size={14} color={theme.accent} />
+                <Text style={[styles.actionBtnText, { color: theme.accent }]}>监控</Text>
+              </View>
+            </RipplePressable>
+            <RipplePressable
+              onPress={() => {
+                Haptic.medium();
+                setShowDbList(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t('db.title')}
+            >
+              <View style={[styles.actionBtn, { backgroundColor: theme.accentLight, borderColor: theme.accent + '40' }]}>
+                <Ionicons name="server-outline" size={14} color={theme.accent} />
+                <Text style={[styles.actionBtnText, { color: theme.accent }]}>DB</Text>
+              </View>
+            </RipplePressable>
+          </View>
         </View>
       </View>
 
@@ -175,6 +237,14 @@ export default function MainTabs() {
           paddingBottom: Math.max(insets.bottom || 0, SPACING.sm),
         },
       ]}>
+        <Animated.View style={[
+          styles.tabIndicatorGlow,
+          {
+            // backgroundColor: theme.accentGlow,
+            width: 56,
+            transform: [{ translateX: tabIndicatorLeft }],
+          },
+        ]} />
         <Animated.View style={[
           styles.tabIndicator,
           {
@@ -291,7 +361,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginTop: -50,
   },
   headerContent: { flexDirection: 'row', alignItems: 'center' },
   avatarTouchable: { position: 'relative', marginRight: SPACING.md },
@@ -314,6 +384,13 @@ const styles = StyleSheet.create({
   headerStatusRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   statusIcon: { marginRight: 3 },
   headerStatus: { ...TYPOGRAPHY.caption },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  actionBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.full, borderWidth: StyleSheet.hairlineWidth,
+  },
+  actionBtnText: { fontSize: 10, fontWeight: '700', marginLeft: 3 },
   accountChip: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: SPACING.sm, paddingVertical: 2,
@@ -332,6 +409,12 @@ const styles = StyleSheet.create({
     top: 0,
     height: 3,
     borderRadius: 2,
+  },
+  tabIndicatorGlow: {
+    position: 'absolute',
+    top: -6,
+    height: 12,
+    borderRadius: 6,
   },
   tab: {
     flex: 1,

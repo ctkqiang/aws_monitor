@@ -4,18 +4,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const THEME_STORAGE_KEY = 'awsight-theme-mode';
 
-// ── Color Token System ──────────────────────────────────────────
-
 export interface ThemeColors {
   bg: string;
+  bgSubtle: string;
   bgCard: string;
+  bgCardHover: string;
   bgInput: string;
+  bgGlass: string;
   border: string;
+  borderLight: string;
   text: string;
   textSecondary: string;
   textMuted: string;
   textLabel: string;
   accent: string;
+  accentGlow: string;
   accentLight: string;
   accentText: string;
   btnSecondary: string;
@@ -25,57 +28,101 @@ export interface ThemeColors {
   tabBarBg: string;
   tabBarBorder: string;
   danger: string;
+  dangerLight: string;
   success: string;
+  successLight: string;
+  warning: string;
+  warningLight: string;
+  info: string;
+  infoLight: string;
   statusBar: 'light' | 'dark';
+  gradientStart: string;
+  gradientEnd: string;
+  cliBg: string;
+  cliText: string;
+  cliAccent: string;
+  overlay: string;
 }
 
 const darkTheme: ThemeColors = {
-  bg: '#0f0f1a',
-  bgCard: '#1a1a2e',
-  bgInput: '#12121f',
-  border: '#2a2a3e',
-  text: '#f0f0f5',
-  textSecondary: '#a0a0b8',
-  textMuted: '#6b6b80',
-  textLabel: '#8e8ea8',
+  bg: '#0a0a14',
+  bgSubtle: '#0f0f1a',
+  bgCard: '#141428',
+  bgCardHover: '#1a1a30',
+  bgInput: '#0d0d1a',
+  bgGlass: 'rgba(20,20,40,0.85)',
+  border: '#1e1e36',
+  borderLight: '#282844',
+  text: '#eaeaef',
+  textSecondary: '#9d9db8',
+  textMuted: '#5e5e78',
+  textLabel: '#8080a0',
   accent: '#FF9900',
-  accentLight: 'rgba(255,153,0,0.12)',
-  accentText: '#121212',
-  btnSecondary: '#2a2a3e',
-  btnSecondaryText: '#e0e0f0',
-  placeholder: '#5a5a72',
-  tabInactive: '#6a6a80',
-  tabBarBg: '#151528',
-  tabBarBorder: '#2a2a3e',
-  danger: '#e74c3c',
-  success: '#27ae60',
+  accentGlow: 'rgba(255,153,0,0.20)',
+  accentLight: 'rgba(255,153,0,0.10)',
+  accentText: '#0d0d0d',
+  btnSecondary: '#1e1e3a',
+  btnSecondaryText: '#d0d0e8',
+  placeholder: '#4a4a64',
+  tabInactive: '#5a5a78',
+  tabBarBg: '#0e0e1e',
+  tabBarBorder: '#1e1e36',
+  danger: '#ff4757',
+  dangerLight: 'rgba(255,71,87,0.12)',
+  success: '#2ed573',
+  successLight: 'rgba(46,213,115,0.12)',
+  warning: '#ffa502',
+  warningLight: 'rgba(255,165,2,0.12)',
+  info: '#70a1ff',
+  infoLight: 'rgba(112,161,255,0.12)',
   statusBar: 'light',
+  gradientStart: '#0a0a14',
+  gradientEnd: '#141428',
+  cliBg: '#080810',
+  cliText: '#2ed573',
+  cliAccent: '#70a1ff',
+  overlay: 'rgba(0,0,0,0.55)',
 };
 
 const lightTheme: ThemeColors = {
-  bg: '#f2f2f7',
+  bg: '#f5f5fa',
+  bgSubtle: '#ebebf2',
   bgCard: '#ffffff',
+  bgCardHover: '#f8f8fc',
   bgInput: '#ffffff',
-  border: '#dddfe2',
-  text: '#1c1c2e',
-  textSecondary: '#5a5a6e',
-  textMuted: '#8e8ea0',
-  textLabel: '#6e6e82',
+  bgGlass: 'rgba(255,255,255,0.90)',
+  border: '#e0e0ec',
+  borderLight: '#f0f0f6',
+  text: '#1a1a2e',
+  textSecondary: '#555570',
+  textMuted: '#8888a0',
+  textLabel: '#6e6e88',
   accent: '#e68600',
-  accentLight: 'rgba(230,134,0,0.10)',
+  accentGlow: 'rgba(230,134,0,0.15)',
+  accentLight: 'rgba(230,134,0,0.08)',
   accentText: '#ffffff',
-  btnSecondary: '#e8e8f0',
-  btnSecondaryText: '#1c1c2e',
-  placeholder: '#aaaab8',
-  tabInactive: '#8e8ea0',
+  btnSecondary: '#eaeaef',
+  btnSecondaryText: '#1a1a2e',
+  placeholder: '#b0b0c0',
+  tabInactive: '#8888a0',
   tabBarBg: '#ffffff',
-  tabBarBorder: '#dddde5',
-  danger: '#c0392b',
+  tabBarBorder: '#e0e0ee',
+  danger: '#e74c3c',
+  dangerLight: 'rgba(231,76,60,0.10)',
   success: '#27ae60',
+  successLight: 'rgba(39,174,96,0.10)',
+  warning: '#e67e22',
+  warningLight: 'rgba(230,126,34,0.10)',
+  info: '#3b7ddd',
+  infoLight: 'rgba(59,125,221,0.10)',
   statusBar: 'dark',
+  gradientStart: '#f5f5fa',
+  gradientEnd: '#ebebf2',
+  cliBg: '#1a1a2e',
+  cliText: '#2ed573',
+  cliAccent: '#3b7ddd',
+  overlay: 'rgba(0,0,0,0.35)',
 };
-
-// ── Spacing Scale (4-point grid) ─────────────────────────────────
 
 export const SPACING = {
   xs: 4,
@@ -88,19 +135,15 @@ export const SPACING = {
   huge: 48,
 } as const;
 
-// ── Border Radius Scale ──────────────────────────────────────────
-
 export const RADIUS = {
   xs: 4,
   sm: 6,
   md: 10,
   lg: 12,
-  xl: 14,
-  xxl: 18,
+  xl: 16,
+  xxl: 20,
   full: 9999,
 } as const;
-
-// ── Typography Scale ─────────────────────────────────────────────
 
 export const TYPOGRAPHY = {
   h1: { fontSize: 34, fontWeight: '800' as const, letterSpacing: -1, lineHeight: 41 },
@@ -117,8 +160,6 @@ export const TYPOGRAPHY = {
   tab: { fontSize: 11, fontWeight: '600' as const, lineHeight: 14 },
 } as const;
 
-// ── Shadow Presets (iOS) / Elevation (Android) ───────────────────
-
 export interface Shadow {
   shadowColor: string;
   shadowOffset: { width: number; height: number };
@@ -128,51 +169,25 @@ export interface Shadow {
 }
 
 export const SHADOWS: Record<string, Shadow> = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  xl: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 20,
-    elevation: 8,
-  },
+  xs: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 2, elevation: 1 },
+  sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  md: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
+  lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 6 },
+  xl: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.16, shadowRadius: 24, elevation: 10 },
+  glow: { shadowColor: '#FF9900', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 8 },
 };
-
-// ── Animation Presets ────────────────────────────────────────────
 
 export const ANIMATION = {
   fast: { duration: 200 },
   normal: { duration: 300 },
   slow: { duration: 400 },
   spring: {
-    gentle: { tension: 120, friction: 14, useNativeDriver: true },
-    snappy: { tension: 200, friction: 20, useNativeDriver: true },
-    bouncy: { tension: 100, friction: 10, useNativeDriver: true },
+    gentle: { tension: 120, friction: 14, useNativeDriver: true as const },
+    snappy: { tension: 200, friction: 20, useNativeDriver: true as const },
+    bouncy: { tension: 100, friction: 10, useNativeDriver: true as const },
   },
-  staggeredDelay: (index: number, baseDelay: number = 50) => index * baseDelay,
+  staggeredDelay: (index: number, baseDelay: number = 50) => Math.min(index * baseDelay, 500),
 } as const;
-
-// ── Context ──────────────────────────────────────────────────────
 
 const ThemeContext = createContext<{
   colors: ThemeColors;
@@ -241,12 +256,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useTheme(): ThemeColors {
-  const { colors } = useContext(ThemeContext);
-  return colors;
+export function useTheme() {
+  return useContext(ThemeContext).colors;
 }
 
-export function useResolvedThemeMode(): 'light' | 'dark' {
-  const { mode } = useContext(ThemeContext);
-  return mode;
+export function useResolvedThemeMode() {
+  return useContext(ThemeContext).mode;
 }

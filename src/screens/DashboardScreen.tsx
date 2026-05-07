@@ -181,14 +181,14 @@ export default function DashboardScreen() {
           />
         }
       >
-        <View style={styles.heroSection}>
+        {/* <View style={styles.heroSection}>
           <Text style={[styles.heroTitle, { color: theme.accent }]}>
             {t('dashboard.title')}
           </Text>
           <Text style={[styles.heroSubtitle, { color: theme.textMuted }]}>
             {t('dashboard.subtitle')}
           </Text>
-        </View>
+        </View> */}
 
         {isLoading ? (
           <SkeletonList count={8} />
@@ -309,13 +309,12 @@ const styles = StyleSheet.create({
   },
   heroTitle: { ...TYPOGRAPHY.h2, marginBottom: SPACING.xs },
   heroSubtitle: { ...TYPOGRAPHY.body },
-  loadingContainer: { alignItems: 'center', paddingVertical: SPACING.huge },
-  loadingText: { ...TYPOGRAPHY.caption, marginTop: SPACING.md },
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: SPACING.md,
-    gap: SPACING.md,
+    paddingTop: SPACING.lg,
+    gap: SPACING.sm,
     marginBottom: SPACING.xl,
   },
   metricCard: {
@@ -328,7 +327,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   metricIcon: {
-    width: 42, height: 42, borderRadius: RADIUS.lg,
+    width: 44, height: 44, borderRadius: RADIUS.lg,
     justifyContent: 'center', alignItems: 'center',
     marginBottom: SPACING.sm,
   },
@@ -355,7 +354,7 @@ const styles = StyleSheet.create({
   miniRow: {
     flexDirection: 'row', alignItems: 'center',
     marginHorizontal: SPACING.lg, marginBottom: SPACING.xs,
-    borderRadius: RADIUS.lg, borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: RADIUS.xl, borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
   miniAccent: { width: 3, alignSelf: 'stretch' },

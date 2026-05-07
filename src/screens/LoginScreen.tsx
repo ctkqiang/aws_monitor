@@ -291,6 +291,7 @@ export default function LoginScreen() {
               styles.logoWrapper,
               { borderColor: theme.accent, backgroundColor: theme.accentLight },
               { transform: [{ scale: logoScale }] },
+              SHADOWS.glow,
             ]}>
               <Image source={require('@/../assets/applogo.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="AWSight Logo" />
             </Animated.View>
