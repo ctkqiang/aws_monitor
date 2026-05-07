@@ -23,6 +23,7 @@ export function useLogGroups() {
           if (res.logGroups) groups.push(...res.logGroups);
           nextToken = res.nextToken;
         } while (nextToken);
+        groups.sort((a, b) => (b.creationTime || 0) - (a.creationTime || 0));
         Logger.info(TAG, `获取到 ${groups.length} 个日志组`);
         return groups;
       } catch (e: any) {
@@ -87,6 +88,7 @@ export function useLogEvents(
         Logger.info(TAG, `日志流 ${logStreamName} 获取到 ${events.length} 个事件`, {
           pageCount,
         });
+        events.reverse();
         return events;
       } catch (e: any) {
         Logger.error(TAG, '获取日志事件失败', { logGroupName, logStreamName, error: e.message, code: e.name });
@@ -117,6 +119,7 @@ export function useFilterLogEvents(
           if (res.events) events.push(...res.events);
           nextToken = res.nextToken;
         } while (nextToken);
+        events.reverse();
         return events;
       } catch (e: any) {
         Logger.error(TAG, '过滤日志事件失败', { logGroupName, searchTerm, error: e.message, code: e.name });

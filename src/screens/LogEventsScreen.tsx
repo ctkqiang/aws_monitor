@@ -57,6 +57,7 @@ export default function LogEventsScreen({ logGroupName, logStreamName, onBack }:
   const theme = useTheme();
   const { data: events, isLoading, isRefetching, error, refetch } = useLogEvents(logGroupName, logStreamName);
   const [filter, setFilter] = React.useState('');
+  const [newestFirst, setNewestFirst] = React.useState(true);
 
   React.useEffect(() => {
     Logger.info(TAG, '日志事件页面已挂载', {
@@ -66,9 +67,15 @@ export default function LogEventsScreen({ logGroupName, logStreamName, onBack }:
   }, [logGroupName, logStreamName]);
 
   const filteredEvents = React.useMemo(() => {
-    if (!filter) return events;
-    return events?.filter((e) => e.message?.toLowerCase().includes(filter.toLowerCase()));
-  }, [events, filter]);
+    let list = events;
+    if (filter) {
+      list = events?.filter((e) => e.message?.toLowerCase().includes(filter.toLowerCase()));
+    }
+    if (list && newestFirst) {
+      return [...list]; 
+    }
+    return list ? [...list].reverse() : list;
+  }, [events, filter, newestFirst]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -86,9 +93,19 @@ export default function LogEventsScreen({ logGroupName, logStreamName, onBack }:
           <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
             {logStreamName}
           </Text>
-          <Text style={[styles.subtitleText, { color: theme.textMuted }]}>
-            {events?.length || 0} events
-          </Text>
+          <View style={styles.headerMetaRow}>
+            <Text style={[styles.subtitleText, { color: theme.textMuted }]}>
+              {events?.length || 0} 条日志
+            </Text>
+            <RipplePressable onPress={() => setNewestFirst(!newestFirst)}>
+              <View style={[styles.sortBtn, { backgroundColor: theme.bgInput }]}>
+                <Ionicons name={newestFirst ? 'arrow-down' : 'arrow-up'} size={11} color={theme.accent} style={{ marginRight: 3 }} />
+                <Text style={[styles.sortBtnText, { color: theme.accent }]}>
+                  {newestFirst ? '最新' : '最早'}
+                </Text>
+              </View>
+            </RipplePressable>
+          </View>
         </View>
         <View style={{ width: 60 }} />
       </View>
@@ -149,7 +166,7 @@ export default function LogEventsScreen({ logGroupName, logStreamName, onBack }:
           ListFooterComponent={
             (events && events.length >= 500) ? (
               <Text style={[styles.footerText, { color: theme.textMuted }]}>
-                Showing latest 500 events. Pull to refresh.
+                已显示最近 500 条日志，下拉刷新获取更多
               </Text>
             ) : null
           }
@@ -178,8 +195,15 @@ const styles = StyleSheet.create({
   backRow: { flexDirection: 'row', alignItems: 'center' },
   backBtn: { ...TYPOGRAPHY.bodyBold },
   headerCenter: { flex: 1, alignItems: 'center' },
+  headerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: 2 },
+  sortBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: SPACING.sm, paddingVertical: 2,
+    borderRadius: RADIUS.xs,
+  },
+  sortBtnText: { ...TYPOGRAPHY.monoSm, fontWeight: '600' },
   title: { ...TYPOGRAPHY.title, fontSize: 14 },
-  subtitleText: { ...TYPOGRAPHY.caption, marginTop: 2 },
+  subtitleText: { ...TYPOGRAPHY.caption },
   filterRow: {
     flexDirection: 'row', alignItems: 'center',
     margin: SPACING.md, marginBottom: 0,

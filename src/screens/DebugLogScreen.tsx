@@ -26,6 +26,7 @@ export default function DebugLogScreen({ onClose }: Props) {
   const [showLevel, setShowLevel] = React.useState<LogLevel>(LogLevel.INFO);
   const [stats, setStats] = React.useState<LogStats | null>(null);
   const [showStats, setShowStats] = React.useState(false);
+  const [newestFirst, setNewestFirst] = React.useState(true);
 
   React.useEffect(() => {
     const refresh = () => {
@@ -38,12 +39,16 @@ export default function DebugLogScreen({ onClose }: Props) {
   }, []);
 
   const filtered = React.useMemo(() => {
-    return entries.filter((e) => {
+    let list = entries.filter((e) => {
       if (e.level < showLevel) return false;
       if (filter && !e.message.toLowerCase().includes(filter.toLowerCase()) && !e.tag.toLowerCase().includes(filter.toLowerCase())) return false;
       return true;
     });
-  }, [entries, showLevel, filter]);
+    if (newestFirst) {
+      return [...list].reverse();
+    }
+    return list;
+  }, [entries, showLevel, filter, newestFirst]);
 
   const currentLevelConfig = LOG_LEVELS.find((l) => l === showLevel) ?? LOG_LEVELS[1];
   const levelLabel = showLevel === LogLevel.DEBUG ? 'ALL' : LEVEL_CONFIG[LogLevel[showLevel]]?.label + '+';
@@ -73,7 +78,17 @@ export default function DebugLogScreen({ onClose }: Props) {
       <View style={[styles.header, { backgroundColor: theme.bgCard, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
           <Ionicons name="bug" size={18} color={theme.accent} style={{ marginRight: SPACING.sm }} />
-          <Text style={[styles.title, { color: theme.text }]}>Debug Logs</Text>
+          <Text style={[styles.title, { color: theme.text }]}>调试日志</Text>
+          <TouchableOpacity
+            onPress={() => setNewestFirst(!newestFirst)}
+            activeOpacity={0.7}
+            style={[styles.sortBtn, { backgroundColor: theme.bgInput }]}
+          >
+            <Ionicons name={newestFirst ? 'arrow-down' : 'arrow-up'} size={10} color={theme.accent} style={{ marginRight: 3 }} />
+            <Text style={[styles.sortBtnText, { color: theme.accent }]}>
+              {newestFirst ? '最新' : '最早'}
+            </Text>
+          </TouchableOpacity>
           <View style={[styles.countBadge, { backgroundColor: theme.accentLight }]}>
             <Text style={[styles.countText, { color: theme.accent }]}>{filtered.length}</Text>
           </View>
@@ -99,17 +114,17 @@ export default function DebugLogScreen({ onClose }: Props) {
         <View style={[styles.statsBar, { backgroundColor: theme.bgCard, borderBottomColor: theme.border }]}>
           <View style={styles.statItem}>
             <Text style={[styles.statVal, { color: theme.text }]}>{stats.total}</Text>
-            <Text style={[styles.statLabel, { color: theme.textMuted }]}>Total</Text>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>总计</Text>
           </View>
           <View style={[styles.statSplit, { backgroundColor: theme.border }]} />
           <View style={styles.statItem}>
             <Text style={[styles.statVal, { color: '#e74c3c' }]}>{stats.errors}</Text>
-            <Text style={[styles.statLabel, { color: theme.textMuted }]}>Errors</Text>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>错误</Text>
           </View>
           <View style={[styles.statSplit, { backgroundColor: theme.border }]} />
           <View style={styles.statItem}>
             <Text style={[styles.statVal, { color: '#FF9900' }]}>{stats.warnings}</Text>
-            <Text style={[styles.statLabel, { color: theme.textMuted }]}>Warns</Text>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>警告</Text>
           </View>
         </View>
       )}
@@ -140,7 +155,7 @@ export default function DebugLogScreen({ onClose }: Props) {
 
       <TextInput
         style={[styles.filterInput, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
-        placeholder="Filter by message or tag..."
+        placeholder="按消息或标签过滤..."
         placeholderTextColor={theme.placeholder}
         value={filter}
         onChangeText={setFilter}
@@ -155,7 +170,7 @@ export default function DebugLogScreen({ onClose }: Props) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="document-text-outline" size={40} color={theme.textMuted} />
-            <Text style={[styles.emptyText, { color: theme.textMuted }]}>No log entries</Text>
+            <Text style={[styles.emptyText, { color: theme.textMuted }]}>暂无日志条目</Text>
           </View>
         }
       />
@@ -177,6 +192,13 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full, minWidth: 22, alignItems: 'center',
   },
   countText: { ...TYPOGRAPHY.monoSm, fontWeight: '700' },
+  sortBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    marginLeft: SPACING.sm,
+    paddingHorizontal: SPACING.sm, paddingVertical: 2,
+    borderRadius: RADIUS.xs,
+  },
+  sortBtnText: { ...TYPOGRAPHY.monoSm, fontWeight: '600' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   iconBtn: {
     width: 32, height: 32, borderRadius: RADIUS.full,

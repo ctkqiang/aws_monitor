@@ -9,8 +9,7 @@
     "backgroundColor": "#1a1a2e",
     "splash": {
       "image": "./assets/applogo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "resizeMode": "contain"
     },
     "ios": {
       "supportsTablet": true,
@@ -26,10 +25,10 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/applogo.png",
-        "backgroundColor": "#1a1a2e"
+        "backgroundColor": "#FFFFFF"
       },
       "package": "xin.ctkqiang.awsight",
-      "allowBackup": false,
+      "allowBackup": true,
       "intentFilters": [
         {
           "action": "VIEW",
