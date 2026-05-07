@@ -19,3 +19,4 @@ yarn-error.*
 *.tsbuildinfo
 /ios
 /android
+*.apk
