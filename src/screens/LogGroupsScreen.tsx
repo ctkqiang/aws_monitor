@@ -1,11 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TextInput, FlatList, ActivityIndicator, RefreshControl, StyleSheet, Animated } from 'react-native';
+import { View, Text, TextInput, FlatList, RefreshControl, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
 import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useLogGroups } from '@/hooks/useCloudWatch';
 import { Logger } from '@/utils/logger';
+import { SkeletonList } from '@/utils/animations';
 import RipplePressable from '@/components/RipplePressable';
 import LogStreamsScreen from './LogStreamsScreen';
 
@@ -119,10 +120,7 @@ export default function LogGroupsScreen() {
       </View>
 
       {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
-        </View>
+        <SkeletonList count={8} />
       ) : error ? (
         <View style={styles.centered}>
           <Ionicons name="cloud-offline-outline" size={48} color={theme.danger} />

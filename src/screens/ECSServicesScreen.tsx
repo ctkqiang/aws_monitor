@@ -11,6 +11,7 @@ import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useClusters, useServices, useRestartService } from '@/hooks/useECS';
 import { useTaskDefinition } from '@/hooks/useECSTaskDef';
 import { useUIStore } from '@/stores/uiStore';
+import { SkeletonList } from '@/utils/animations';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 import { pushBackHandler, popBackHandler } from './MainTabs';
@@ -371,7 +372,7 @@ export default function ECSServicesScreen() {
           <View style={{ width: 60 }} />
         </View>
         {servicesLoading ? (
-          <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
+          <SkeletonList count={5} />
         ) : servicesError ? (
           <View style={styles.centered}>
             <Text style={[styles.emptyText, { color: '#e74c3c' }]}>{(servicesError as any)?.message || t('common.error')}</Text>
@@ -397,7 +398,7 @@ export default function ECSServicesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {clustersLoading ? (
-        <ActivityIndicator size="large" color={theme.accent} style={styles.loader} />
+        <SkeletonList count={5} />
       ) : clustersError ? (
         <View style={styles.centered}>
           <Text style={[styles.emptyText, { color: '#e74c3c' }]}>{(clustersError as any)?.message || t('common.error')}</Text>
@@ -437,7 +438,7 @@ function TaskDefView({ taskDefArn, onBack }: { taskDefArn: string; onBack: () =>
         <View style={{ width: 60 }} />
       </View>
       {isLoading ? (
-        <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 100 }} />
+        <SkeletonList count={4} />
       ) : (
         <ScrollView horizontal style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={taskStyles.codeContent}>

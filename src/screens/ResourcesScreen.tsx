@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  View, Text, FlatList, ActivityIndicator, StyleSheet,
+  View, Text, FlatList, StyleSheet,
   Animated, TouchableOpacity, ScrollView, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import { useSecurityGroups } from '@/hooks/useEC2';
 import { useFSxFileSystems } from '@/hooks/useFSx';
 import { useBuckets } from '@/hooks/useS3';
 import { Logger } from '@/utils/logger';
+import { SkeletonList } from '@/utils/animations';
 import RipplePressable from '@/components/RipplePressable';
 import ResourceDetailScreen, { ResourceType } from './ResourceDetailScreen';
 
@@ -249,10 +250,7 @@ export default function ResourcesScreen() {
       </ScrollView>
 
       {activeQuery.isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={theme.accent} />
-          <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
-        </View>
+        <SkeletonList count={5} />
       ) : activeQuery.error ? (
         <View style={styles.centered}>
           <Ionicons name="cloud-offline-outline" size={48} color={theme.danger} />

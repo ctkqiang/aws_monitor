@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View, Text, ScrollView, StyleSheet, Animated, RefreshControl,
-  ActivityIndicator, TouchableOpacity,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
@@ -15,6 +15,7 @@ import { useFSxFileSystems } from '@/hooks/useFSx';
 import { useClusters } from '@/hooks/useECS';
 import { useRepositories } from '@/hooks/useECR';
 import { Logger } from '@/utils/logger';
+import { SkeletonList } from '@/utils/animations';
 import ResourceDetailScreen, { ResourceType } from './ResourceDetailScreen';
 import RipplePressable from '@/components/RipplePressable';
 
@@ -189,10 +190,7 @@ export default function DashboardScreen() {
         </View>
 
         {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.accent} />
-            <Text style={[styles.loadingText, { color: theme.textMuted }]}>{t('common.loading')}</Text>
-          </View>
+          <SkeletonList count={8} />
         ) : (
           <>
             <View style={styles.metricsGrid}>
