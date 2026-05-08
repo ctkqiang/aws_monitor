@@ -14,38 +14,10 @@ import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
 import DatabaseStoreProcedureViewer from './DatabaseStoreProcedureViewer';
 import HistorySQLQuery from './HistorySQLQuery';
+import { executeQuery } from '@/services/db/client';
+import { DbConnectionConfig } from '@/services/db/types';
 
 const TAG = 'DBTableViewer';
-
-const DB_PORT_MAP: Record<string, number> = {
-  mysql: 3306,
-  postgresql: 5432,
-  questdb: 8812,
-  sqlite: 0,
-};
-
-async function performRealQuery(query: string, connection: DbConnection): Promise<{ status: string; responseMs: number; error?: string }> {
-  const port = connection.port || DB_PORT_MAP[connection.type] || 3306;
-  if (connection.type === 'sqlite') {
-    return { status: 'ok', responseMs: 1 };
-  }
-  const start = Date.now();
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    const resp = await fetch(`http://${connection.host}:${port}/`, {
-      method: 'HEAD',
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    return { status: resp.ok ? 'ok' : 'error', responseMs: Date.now() - start, error: resp.ok ? undefined : `HTTP ${resp.status}` };
-  } catch (e: any) {
-    if (e.name === 'AbortError') {
-      return { status: 'timeout', responseMs: 8000, error: '连接超时 (8s)' };
-    }
-    return { status: 'error', responseMs: Date.now() - start, error: e.message || '连接失败' };
-  }
-}
 
 const SQL_KEYWORDS = [
   'SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET',
@@ -114,17 +86,30 @@ export default function DatabaseTableViewer({ connection, onBack }: Props) {
     const startTime = Date.now();
 
     try {
-      const { status, responseMs, error: connError } = await performRealQuery(query, connection);
-      setColumns(status === 'ok' ? ['status', 'response_ms', 'host', 'query'] : ['error', 'detail']);
-      setResults([{
-        status: status === 'ok' ? 'connected' : 'failed',
-        response_ms: responseMs,
-        host: `${connection.host}:${connection.port}`,
-        query: query.trim().substring(0, 80),
-        ...(connError ? { error: connError, detail: connError } : { detail: 'TCP 端口可达' }),
-      }] as any);
+      const dbConfig: DbConnectionConfig = {
+        id: connection.id,
+        type: connection.type,
+        host: connection.host,
+        port: parseInt(connection.port, 10) || 3306,
+        dbName: connection.dbName,
+        username: connection.username,
+        password: connection.password,
+      };
 
-      const duration = Date.now() - startTime;
+      const data = await executeQuery(dbConfig, query.trim());
+
+      if (data.success && data.columns && data.rows) {
+        setColumns(data.columns);
+        setResults(data.rows);
+      } else {
+        setColumns(['error', 'detail']);
+        setResults([{
+          error: data.error || '未知错误',
+          detail: data.errorCode || data.error || '查询失败',
+        }] as any);
+      }
+
+      const duration = data.durationMs ?? (Date.now() - startTime);
       addQueryHistory({
         query: query.trim(),
         connectionId: connection.id,
@@ -132,7 +117,11 @@ export default function DatabaseTableViewer({ connection, onBack }: Props) {
         executedAt: Date.now(),
         duration,
       });
-      Logger.info(TAG, '查询已执行', { duration, status });
+      Logger.info(TAG, '查询已执行', {
+        duration,
+        success: data.success,
+        rowCount: data.rowCount,
+      });
     } catch (e: any) {
       setError(e.message || '查询执行失败');
       Logger.logError(TAG, '查询执行失败', e);

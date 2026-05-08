@@ -5,6 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
 import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { DbConnection } from '@/stores/dbStore';
+import { Logger } from '@/utils/logger';
+import { fetchProcedures as fetchDbProcedures } from '@/services/db/client';
+import { DbConnectionConfig } from '@/services/db/types';
+
+const TAG = 'DBProcViewer';
 
 interface Props {
   connection: DbConnection;
@@ -19,32 +24,71 @@ interface StoredProcedure {
   created: string;
 }
 
-const MOCK_PROCEDURES: Record<string, StoredProcedure[]> = {
-  mysql: [
-    { name: 'sp_get_user_orders', schema: 'public', language: 'SQL', params: 'IN user_id INT, IN limit INT', definer: 'admin@%', created: '2025-05-12' },
-    { name: 'sp_update_inventory', schema: 'public', language: 'SQL', params: 'IN product_id INT, IN qty INT', definer: 'admin@%', created: '2025-05-20' },
-    { name: 'sp_calculate_revenue', schema: 'analytics', language: 'SQL', params: 'IN start_date DATE, IN end_date DATE', definer: 'root@localhost', created: '2025-06-01' },
-  ],
-  postgresql: [
-    { name: 'fn_audit_log', schema: 'public', language: 'plpgsql', params: 'IN table_name TEXT', definer: 'postgres', created: '2025-04-10' },
-    { name: 'fn_cleanup_sessions', schema: 'public', language: 'plpgsql', params: '', definer: 'postgres', created: '2025-05-01' },
-  ],
-  questdb: [
-    { name: 'rebalance_partitions', schema: 'public', language: 'SQL', params: '', definer: 'admin', created: '2025-06-08' },
-  ],
-  sqlite: [],
-};
-
 export default function DatabaseStoreProcedureViewer({ connection }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const [loading] = React.useState(false);
-  const procedures = MOCK_PROCEDURES[connection.type] || [];
+  const [procedures, setProcedures] = React.useState<StoredProcedure[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function fetchProcedures() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const dbConfig: DbConnectionConfig = {
+          id: connection.id,
+          type: connection.type,
+          host: connection.host,
+          port: parseInt(connection.port, 10) || 3306,
+          dbName: connection.dbName,
+          username: connection.username,
+          password: connection.password,
+        };
+
+        const data = await fetchDbProcedures(dbConfig);
+        if (cancelled) return;
+
+        if (data.success) {
+          setProcedures(data.procedures || []);
+        } else {
+          setError(data.error || '获取存储过程失败');
+        }
+      } catch (e: any) {
+        if (cancelled) return;
+        setError(e.message || '获取存储过程失败');
+        Logger.logError(TAG, '获取存储过程失败', e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchProcedures();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [connection.id]);
 
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="small" color={theme.accent} />
+        <Text style={[styles.emptyText, { color: theme.textMuted }]}>加载中...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="alert-circle-outline" size={24} color={theme.textMuted} />
+        <Text style={[styles.emptyText, { color: theme.textMuted }]} numberOfLines={1}>
+          {error}
+        </Text>
       </View>
     );
   }

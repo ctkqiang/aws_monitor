@@ -7,10 +7,6 @@
     "icon": "./assets/applogo.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#1a1a2e",
-    "splash": {
-      "image": "./assets/applogo.png",
-      "resizeMode": "contain"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "xin.ctkqiang.awsight",
