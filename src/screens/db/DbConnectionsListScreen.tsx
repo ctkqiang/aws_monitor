@@ -8,6 +8,7 @@ import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { useDbStore, DbConnection } from '@/stores/dbStore';
 import { Haptic } from '@/utils/haptics';
 import RipplePressable from '@/components/RipplePressable';
+import { dropLocalDatabase } from '@/services/db/local-sqlite-executor';
 
 interface Props {
   onBack: () => void;
@@ -35,7 +36,12 @@ export default function DbConnectionsListScreen({ onBack, onAdd, onEdit, onConne
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('common.delete'), style: 'destructive',
-        onPress: () => removeConnection(c.id),
+        onPress: async () => {
+          if (c.type === 'sqlite') {
+            await dropLocalDatabase(c.dbName);
+          }
+          removeConnection(c.id);
+        },
       },
     ]);
   };

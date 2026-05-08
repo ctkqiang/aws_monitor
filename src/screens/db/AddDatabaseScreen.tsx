@@ -12,6 +12,7 @@ import { useDbStore, DbType, DbConnection } from '@/stores/dbStore';
 import { Haptic } from '@/utils/haptics';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
+import { createLocalDatabase } from '@/services/db/local-sqlite-executor';
 
 const TAG = 'AddDatabase';
 
@@ -64,12 +65,12 @@ export default function AddDatabaseScreen({ onBack, editConnection }: Props) {
     const errs: Record<string, string> = {};
     if (dbType !== 'sqlite' && !host.trim()) errs.host = t('db.host') + ' 必填';
     if (dbType !== 'sqlite' && !port.trim()) errs.port = t('db.port') + ' 必填';
-    if (!dbName.trim() && dbType !== 'sqlite') errs.dbName = t('db.dbName') + ' 必填';
+    if (!dbName.trim()) errs.dbName = t('db.dbName') + ' 必填';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
     Haptic.medium();
 
@@ -82,6 +83,14 @@ export default function AddDatabaseScreen({ onBack, editConnection }: Props) {
       password: password,
       remark: remark.trim(),
     };
+
+    if (dbType === 'sqlite') {
+      const result = await createLocalDatabase(dbName.trim());
+      if (!result.success) {
+        Alert.alert(t('common.error'), result.error || '创建数据库失败');
+        return;
+      }
+    }
 
     if (isEditing) {
       updateConnection(editConnection.id, data);

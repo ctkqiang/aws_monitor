@@ -1,4 +1,5 @@
 import { Buffer } from 'buffer';
+import { NativeModules } from 'react-native';
 import TcpSocket from 'react-native-tcp-socket';
 import { Logger } from '@/utils/logger';
 import { QueryResult, DbConnectionConfig } from './types';
@@ -45,34 +46,51 @@ interface MySQLConnection {
   deprecateEOF: boolean;
 }
 
+const TCP_NATIVE_UNAVAILABLE =
+  '原生 TCP 模块不可用。请使用 expo-dev-client 构建运行:\n' +
+  'npx expo prebuild --clean && npx expo run:android';
+
+function isTcpAvailable(): boolean {
+  try {
+    const native = NativeModules?.TcpSockets;
+    if (!native || typeof native.connect !== 'function') {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function connectTcp(host: string, port: number, timeoutMs: number): Promise<TcpSocket.Socket> {
-  if (!TcpSocket || typeof TcpSocket.createConnection !== 'function') {
-    return Promise.reject(new Error(
-      'react-native-tcp-socket 原生模块未加载。\n' +
-      '请确保使用 expo-dev-client 构建，而非 Expo Go。\n' +
-      '运行: npx expo prebuild --clean && npx expo run:android'
-    ));
+  if (!isTcpAvailable()) {
+    return Promise.reject(new Error(TCP_NATIVE_UNAVAILABLE));
   }
 
   return new Promise((resolve, reject) => {
     let settled = false;
+    let socket: TcpSocket.Socket | null = null;
 
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
-      reject(new Error(`TCP 连接超时 (${timeoutMs}ms): ${host}:${port}`));
+      if (socket) { try { socket.destroy(); } catch {} }
+      reject(new Error(`TCP 连接超时 (${timeoutMs}ms)`));
     }, timeoutMs);
 
-    let socket: TcpSocket.Socket;
     try {
       socket = TcpSocket.createConnection({ host, port }, () => {
-        if (settled) {
-          socket.destroy();
-          return;
-        }
+        if (settled) return;
         settled = true;
         clearTimeout(timer);
-        resolve(socket);
+        resolve(socket!);
+      });
+
+      socket.on('error', (err: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(new Error(`TCP 连接错误: ${err.message}`));
       });
     } catch (err: any) {
       if (!settled) {
@@ -80,15 +98,7 @@ function connectTcp(host: string, port: number, timeoutMs: number): Promise<TcpS
         clearTimeout(timer);
         reject(new Error(`TCP Socket 创建失败: ${err.message}`));
       }
-      return;
     }
-
-    socket.on('error', (err: Error) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      reject(new Error(`TCP 连接失败: ${err.message}`));
-    });
   });
 }
 
