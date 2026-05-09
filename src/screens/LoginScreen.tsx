@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View, Text, TextInput, ActivityIndicator, Alert, ScrollView,
-  KeyboardAvoidingView, Platform, StyleSheet, Image, Animated,
+  StyleSheet, Image, Animated,
   Modal, Linking, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { useTheme } from '@/theme/ThemeContext';
 import { RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '@/theme/ThemeContext';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
+import KeyboardAwareScrollView from '@/components/KeyboardAwareScrollView';
 import AccountManagementScreen from './AccountManagementScreen';
 
 const TAG = 'LoginScreen';
@@ -279,13 +280,10 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          accessibilityRole="none"
-        >
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.scroll}
+        accessibilityRole="none"
+      >
           <View style={styles.header}>
             <Animated.View style={[
               styles.logoWrapper,
@@ -480,8 +478,7 @@ export default function LoginScreen() {
               </Text>
             </View>
           </Animated.View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
 
       <Modal visible={showRegionPicker} animationType="fade" transparent onRequestClose={() => setShowRegionPicker(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setShowRegionPicker(false)}>

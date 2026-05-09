@@ -1,8 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  View, Text, TextInput, ScrollView, StyleSheet,
-  KeyboardAvoidingView, Platform, Alert,
+  View, Text, TextInput, StyleSheet, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +11,7 @@ import { useDbStore, DbType, DbConnection } from '@/stores/dbStore';
 import { Haptic } from '@/utils/haptics';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
+import KeyboardAwareScrollView from '@/components/KeyboardAwareScrollView';
 import { createLocalDatabase } from '@/services/db/local-sqlite-executor';
 
 const TAG = 'AddDatabase';
@@ -135,8 +135,7 @@ export default function AddDatabaseScreen({ onBack, editConnection }: Props) {
         <View style={{ width: 60 }} />
       </View>
 
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.scroll}>
 
           <View style={[styles.section, { backgroundColor: theme.bgCard }, SHADOWS.sm]}>
             <Text style={[styles.sectionTitle, { color: theme.textLabel }]}>{t('db.dbType')}</Text>
@@ -233,8 +232,7 @@ export default function AddDatabaseScreen({ onBack, editConnection }: Props) {
           </View>
 
           <View style={{ height: SPACING.xxxl }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

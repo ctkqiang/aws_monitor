@@ -13,6 +13,7 @@ import { useAccountsStore, StoredAccount, AccountFormData } from '@/stores/accou
 import { Haptic } from '@/utils/haptics';
 import { Logger } from '@/utils/logger';
 import RipplePressable from '@/components/RipplePressable';
+import KeyboardAwareScrollView from '@/components/KeyboardAwareScrollView';
 
 const TAG = 'AccountManagement';
 
@@ -266,7 +267,7 @@ export default function AccountManagementScreen({ onBack, onSelect }: Props) {
               </RipplePressable>
             </View>
 
-            <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <KeyboardAwareScrollView style={styles.formScroll} avoidKeyboard={false}>
               <View style={styles.fieldGroup}>
                 <Text style={[styles.label, { color: theme.textLabel }]}>{t('accounts.alias')}</Text>
                 <TextInput
@@ -344,7 +345,7 @@ export default function AccountManagementScreen({ onBack, onSelect }: Props) {
                   )}
                 </TouchableOpacity>
               </View>
-            </ScrollView>
+            </KeyboardAwareScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
