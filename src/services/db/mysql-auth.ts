@@ -1,5 +1,5 @@
 import { Buffer } from 'buffer';
-import Crypto from 'expo-crypto';
+import * as Crypto from 'expo-crypto';
 import { Logger } from '@/utils/logger';
 
 const TAG = 'MySQLAuth';

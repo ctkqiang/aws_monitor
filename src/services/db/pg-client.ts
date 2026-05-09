@@ -104,13 +104,23 @@ function connectTcp(host: string, port: number, timeoutMs: number): Promise<TcpS
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        reject(new Error(`TCP 连接错误: ${err.message}`));
+        const errMsg = err?.message || String(err) || '未知错误';
+        if (errMsg.includes('connect') || errMsg.includes('Socket')) {
+          reject(new Error(`TCP 连接失败: ${errMsg}\n\n可能原因：\n• 原生 TCP 模块未加载（需要使用 expo-dev-client）\n• 目标服务器不可达\n• 端口被防火墙阻止`));
+        } else {
+          reject(new Error(`TCP 连接错误: ${errMsg}`));
+        }
       });
     } catch (err: any) {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
-        reject(new Error(`TCP Socket 创建失败: ${err.message}`));
+        const errMsg = err?.message || String(err) || '未知错误';
+        if (errMsg.includes('Cannot read property') || errMsg.includes('undefined')) {
+          reject(new Error(`TCP Socket 创建失败: ${errMsg}\n\n解决方案：\n1. 不要使用 Expo Go 运行\n2. 使用命令: npx expo prebuild --clean\n3. 使用命令: npx expo run:android (或 run:ios)`));
+        } else {
+          reject(new Error(`TCP Socket 创建失败: ${errMsg}`));
+        }
       }
     }
   });

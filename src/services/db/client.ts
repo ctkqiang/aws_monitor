@@ -1,7 +1,6 @@
-import { Buffer } from 'buffer';
 import { NativeModules } from 'react-native';
 import { Logger } from '@/utils/logger';
-import { DbConnectionConfig, QueryResult, StoredProcedure, ProcedureResult, DbType } from './types';
+import { DbConnectionConfig, QueryResult, ProcedureResult, DbType } from './types';
 import { runMysqlQuery, runMysqlProcedures } from './mysql-client';
 import { runPostgresQuery, runPostgresProcedures } from './pg-client';
 import { executeLocalQuery } from './local-sqlite-executor';
@@ -10,11 +9,6 @@ const TAG = 'DbClient';
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 800;
-
-const TCP_NOT_AVAILABLE_MSG =
-  '\u8FDC\u7A0B\u6570\u636E\u5E93\u8FDE\u63A5\u4E0D\u53EF\u7528\u3002\n' +
-  '\u539F\u751F TCP \u6A21\u5757\u672A\u52A0\u8F7D\uFF0C\u8BF7\u4F7F\u7528 expo-dev-client \u6784\u5EFA:\n' +
-    'npx expo prebuild --clean && npx expo run:android';
 
 export interface ConnectionDiagnostics {
   tcpAvailable: boolean;
