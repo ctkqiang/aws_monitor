@@ -1,9 +1,9 @@
 import React, { useRef } from 'react';
 import {
-  Pressable, Animated, View, StyleSheet,
+  Pressable, Animated,
   PressableProps, ViewStyle, StyleProp,
 } from 'react-native';
-import { SPACING, RADIUS } from '@/theme/ThemeContext';
+import { SPACING } from '@/theme/ThemeContext';
 import { Haptic } from '@/utils/haptics';
 
 interface Props extends PressableProps {
@@ -51,21 +51,19 @@ export default function RipplePressable({
   };
 
   return (
-    <Animated.View style={[{ transform: [{ scale: animScale }] }, style]}>
-      <Pressable
-        {...props}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={handlePress}
-        android_ripple={{ color: rippleColor, borderless: false, radius: SPACING.xxl * 4 }}
-        style={({ pressed }) => [
-          pressed && { opacity: 0.88 },
-        ]}
-        accessible
-        accessibilityRole="button"
-      >
+    <Pressable
+      {...props}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={handlePress}
+      android_ripple={{ color: rippleColor, borderless: false, radius: SPACING.xxl * 4 }}
+      style={style}
+      accessible
+      accessibilityRole="button"
+    >
+      <Animated.View style={{ transform: [{ scale: animScale }] }}>
         {children}
-      </Pressable>
-    </Animated.View>
+      </Animated.View>
+    </Pressable>
   );
 }

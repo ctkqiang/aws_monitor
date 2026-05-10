@@ -20,6 +20,7 @@ import { SkeletonList } from '@/utils/animations';
 import { Haptic } from '@/utils/haptics';
 import RipplePressable from '@/components/RipplePressable';
 import ResourceDetailScreen, { ResourceType } from './ResourceDetailScreen';
+import SecretDetailScreen from './SecretDetailScreen';
 
 const TAG = 'Resources';
 
@@ -97,6 +98,7 @@ export default function ResourcesScreen() {
   const [activeTab, setActiveTab] = React.useState<ResourceTab>('rds');
   const [selectedItem, setSelectedItem] = React.useState<any>(null);
   const [selectedType, setSelectedType] = React.useState<ResourceType>('rds');
+  const [selectedSecret, setSelectedSecret] = React.useState<{ arn: string; name: string } | null>(null);
 
   const rds = useRDSInstances();
   const elasticache = useElastiCacheClusters();
@@ -107,6 +109,16 @@ export default function ResourcesScreen() {
   const secrets = useSecrets();
   const iamRoles = useIAMRoles();
   const iamUsers = useIAMUsers();
+
+  if (selectedSecret) {
+    return (
+      <SecretDetailScreen
+        secretArn={selectedSecret.arn}
+        secretName={selectedSecret.name}
+        onBack={() => setSelectedSecret(null)}
+      />
+    );
+  }
 
   if (selectedItem) {
     return (
@@ -208,6 +220,10 @@ export default function ResourcesScreen() {
       statusColor={item.RotationEnabled ? theme.success : theme.warning}
       theme={theme}
       index={index}
+      onPress={() => {
+        Haptic.medium();
+        setSelectedSecret({ arn: item.ARN, name: item.Name });
+      }}
     />
   );
 
